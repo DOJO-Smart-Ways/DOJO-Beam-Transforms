@@ -192,3 +192,27 @@ class SplitColumnFn(beam.DoFn):
             element[new_column] = parts[i] if i < len(parts) else None
 
         yield element
+
+
+class MergeColumnsFn(beam.DoFn):
+    def __init__(self, merge_instructions):
+        """
+        Initializes the MergeColumnsFn with a set of merge instructions.
+        Each entry in merge_instructions is a tuple containing:
+        - The list of column names to be merged.
+        - The name of the new column after merging.
+        - An optional delimiter to use in the merge, defaulting to an empty string.
+        
+        :param merge_instructions: List of tuples (list of columns to merge, new column name, delimiter)
+        """
+        self.merge_instructions = merge_instructions
+
+    def process(self, element):
+        """
+        Processes each element to merge columns based on the initialized merge instructions.
+        """
+        for columns_to_merge, new_column_name, delimiter in self.merge_instructions:
+            # Join the specified columns with the provided delimiter
+            merged_value = delimiter.join([element[col] for col in columns_to_merge])
+            element[new_column_name] = merged_value
+        yield element
