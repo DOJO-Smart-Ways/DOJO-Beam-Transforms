@@ -140,3 +140,55 @@ class LeftJoinFn(beam.DoFn):
                     yield {**tabela1_value, **filtered_tabela2_value}
             else:
                 yield tabela1_value
+
+
+class SplitColumnFn(beam.DoFn):
+    """
+    A DoFn for splitting a column's value into multiple separate parts based on a specified delimiter
+    and assigning each part to new columns in the input element. This transformation is useful when a
+    single column contains composite data that needs to be separated for further analysis or processing.
+    
+    The class is flexible to handle any number of output columns up to five and will not break if fewer
+    new column names are provided. It also allows specifying a custom delimiter, with '/' as the default.
+    
+    Attributes:
+        column_to_split (str): The name of the column whose value is to be split.
+        new_columns (list of str): A list containing the names of the new columns to store the split parts.
+        delimiter (str): The delimiter to use for splitting the column's value (default: '/').
+    """
+    
+    def __init__(self, column_to_split, new_columns, delimiter='/'):
+        """
+        Initializes the SplitColumnFn with the column to split, the names of the new columns, and the delimiter.
+        
+        Args:
+            column_to_split (str): The name of the column to split.
+            new_columns (list of str): The names of the new columns for the split parts.
+            delimiter (str, optional): The delimiter to use for splitting the value (default: '/').
+        """
+        self.column_to_split = column_to_split
+        self.new_columns = new_columns
+        self.delimiter = delimiter
+
+    def process(self, element):
+        """
+        Splits the specified column's value using the provided delimiter and assigns the resulting parts
+        to new columns in the element. If there are fewer parts than new columns, the remaining new columns
+        are set to None. If there are fewer new column names provided than the parts, only the provided
+        new columns are populated.
+        
+        Args:
+            element (dict): An element of the PCollection, expected to be a dictionary where the column
+                            to split exists.
+                            
+        Yields:
+            The modified element with new columns added for the split parts of the original column's value.
+        """
+        # Split the specified column's value using the provided delimiter.
+        parts = element.get(self.column_to_split, '').split(self.delimiter)
+
+        # Assigning split parts to new columns, defaulting to None if the part is not available.
+        for i, new_column in enumerate(self.new_columns):
+            element[new_column] = parts[i] if i < len(parts) else None
+
+        yield element
