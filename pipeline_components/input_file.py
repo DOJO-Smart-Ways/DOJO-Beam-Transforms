@@ -15,3 +15,10 @@ def read_txt(pipeline, input_file, skip_header_lines=0):
         | 'ReadDadProductSelector' >> beam.io.ReadFromText(input_file, skip_header_lines=skip_header_lines, coder=beam.coders.coders.BytesCoder())
         | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
     )
+
+def read_pdf(pipeline, input_file):
+    return (
+        pipeline
+        | 'Create File Path PDF' >> beam.Create([input_file])
+        | 'Read PDF -> Origin' >> beam.ParDo(ReadPDFDoFn()).with_outputs('failed', main='text')
+    )
