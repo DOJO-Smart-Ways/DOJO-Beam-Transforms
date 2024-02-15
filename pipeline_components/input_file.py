@@ -1,6 +1,19 @@
 # beam_transforms.py
 import apache_beam as beam
 import pandas as pd
+import fitz
+
+class ReadPDFDoFn(beam.DoFn):
+    def process(self, element):
+        file_path = element
+        try:
+            with fitz.open(file_path) as doc:
+                text = []
+                for page in doc:
+                    text.append(page.get_text())
+            yield {'file_path': file_path, 'text': text}
+        except Exception as e:
+            yield beam.pvalue.TaggedOutput('failed', (file_path, str(e)))
 
 def read_csv(pipeline, input_file, delimiter=';'):
     return (
