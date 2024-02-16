@@ -11,5 +11,6 @@ setup(
         'pandas==1.5.3',
         'pandas-datareader==0.10.0',
         'pandas-gbq==0.17.9',
+        'PyMuPDF==1.23.22',
     ],
 )
