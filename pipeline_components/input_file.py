@@ -5,6 +5,40 @@ import fitz
 from apache_beam.io import fileio
 
 
+class ApplyHeadersFn(beam.DoFn):
+    def process(self, data_product, headers):
+        if len(headers) == len(data_product):
+            result = {headers[i]:data_product[i] for i in range(len(headers))}
+            yield result
+        else:
+            yield "Error: Mismatched lengths of headers and data"
+            
+def read_and_apply_headers(pipeline, input_header, input_file_csv, delimiter=';'):
+    """
+    Reads headers from a file and applies them to the data read from another file.
+    
+    Args:
+        pipeline: The Apache Beam Pipeline object.
+        input_header (str): The file path to read the headers from.
+        input_file_csv (str): The file path to read the data from.
+    
+    Returns:
+        A PCollection where each element is a dictionary with headers applied to the data.
+    """
+    # Read and process headers
+    headers = (pipeline
+                | 'ReadHeaderPS' >> beam.io.ReadFromText(input_header, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
+                | 'DecodeAndSplitHeaders' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1').split(';')))
+
+    # Read and process input data
+    body = (pipeline
+                | 'ReadDadProductSelector' >> beam.io.ReadFromText(input_file_csv, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
+                | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
+                | 'SplitColumns' >> beam.Map(lambda line: line.split(delimiter)))  # Assuming the splitting logic is simple
+
+    return (body | 'ApplyHeaders' >> beam.ParDo(ApplyHeadersFn(), beam.pvalue.AsSingleton(headers)))
+
+
 class ProcessPDF(beam.DoFn):
     def process(self, readable_file):
         import fitz  # PyMuPDF
@@ -57,9 +91,3 @@ def read_txt(pipeline, input_file, skip_header_lines=0):
         | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
     )
 
-def read_header_from_csv(pipeline, input_file, skip_header_lines=0):
-    return (
-        pipeline
-        | 'ReadHeaderPS' >> beam.io.ReadFromText(input_file_header, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
-        | 'DecodeAndSplitHeaders' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1').split(';'))
-    )
