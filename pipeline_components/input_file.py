@@ -56,3 +56,10 @@ def read_txt(pipeline, input_file, skip_header_lines=0):
         | 'Read Txt' >> beam.io.ReadFromText(input_file, skip_header_lines=skip_header_lines, coder=beam.coders.coders.BytesCoder())
         | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
     )
+
+def read_header_from_csv(pipeline, input_file, skip_header_lines=0):
+    return (
+        pipeline
+        | 'ReadHeaderPS' >> beam.io.ReadFromText(input_file_header, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
+        | 'DecodeAndSplitHeaders' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1').split(';'))
+    )
