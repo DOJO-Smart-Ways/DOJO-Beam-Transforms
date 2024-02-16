@@ -24,14 +24,14 @@ class ProcessPDF(beam.DoFn):
                 for match in matches:
                     row_data = {
                         " ":match[0],
-                        "PNr": match[1],
-                        "Zuname": match[2],
-                        "Vorname": match[3],
-                        "Kst": match[5],
-                        "Linie": match[6].strip() if match[6] else "",
-                        "Ende Entgelt": '',
-                        "Ende Beschäftigung": match[4],
-                        "stat.Ber.": match[7]
+                        "EMPLOYEE_ID": match[1],
+                        "FIRST_NAME": match[2],
+                        "LAST_NAME": match[3],
+                        "COST_CENTRE": match[5],
+                        "DEPARTAMENT": match[6].strip() if match[6] else "",
+                        "ENDING_PAYMENT": '',
+                        "DIMISSAL_DATE": match[4],
+                        "GROUP": match[7]
                     }
                     yield row_data
 
