@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='dojo_beam_transforms',
+    name='dojo-beam-transforms',
     version='0.1',
     packages=find_packages(),
     install_requires=[
