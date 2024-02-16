@@ -1,5 +1,47 @@
 import apache_beam as beam
 
+
+class ConvertToUpperCase(beam.DoFn):
+    """
+    A DoFn that converts all string values in a dictionary element to uppercase.
+    
+    This function iterates over each key-value pair in the input element. If a value
+    is of type string, it converts the string to uppercase. This is useful in data 
+    normalization processes where consistent case formatting is required.
+    
+    The process method is designed to handle any exceptions that occur during the 
+    conversion, logging an error message for debugging purposes. This ensures that 
+    the pipeline can continue processing other elements even if one element causes 
+    an issue.
+    """
+    
+    def process(self, element):
+        import logging
+        """
+        Processes each element in the PCollection, converting all string values to uppercase.
+        
+        Args:
+            element (dict): An element of the PCollection, expected to be a dictionary.
+            
+        Yields:
+            The modified element with all string values converted to uppercase.
+        """
+        # Create a copy of the keys to iterate over to avoid modifying the dictionary while iterating
+        keys = list(element.keys())
+        
+        for key in keys:
+            value = element[key]
+            # Check if the value is a string
+            try:
+                if isinstance(value, str):
+                    # Convert the string to uppercase and update the element
+                    element[key] = value.upper()
+            except Exception as e:
+                # Log the error for debugging purposes
+                logging.error(f"Error processing key {key} with value {value}: {str(e)}")
+        
+        yield element
+
 class KeyByComposite(beam.DoFn):
     """
     Transforms input elements into key-value pairs where the key is a composite made from 
