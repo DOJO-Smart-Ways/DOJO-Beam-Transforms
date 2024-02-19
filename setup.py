@@ -5,6 +5,7 @@ setup(
     version='0.1',
     packages=find_packages(),
     install_requires=[
+        'apache-beam[dataframe,gcp,interactive]==2.54.0',
         'fsspec==2023.5.0',
         'gcsfs==2023.5.0',
         'openpyxl==3.0.10',
