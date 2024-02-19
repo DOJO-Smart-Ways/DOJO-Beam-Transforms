@@ -31,7 +31,7 @@ class ProcessCSVFiles(beam.DoFn):
         # Return records as dictionaries
         yield from df.to_dict('records')
 
-def process_csv_files_with_union(pipeline, input_pattern, delimiter=';'):
+def read_csvs_union(pipeline, input_pattern, delimiter=';'):
     return (
         pipeline
         | 'Match Files' >> MatchFiles(input_pattern)
