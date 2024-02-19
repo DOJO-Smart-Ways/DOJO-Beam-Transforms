@@ -91,8 +91,8 @@ def read_txt(pipeline, input_file, skip_header_lines=0):
         | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
     )
 
-def read_bq(pipeline, input_file, temp_location):
+def read_bq(pipeline, query, temp_location, use_standard_sql=True):
     return (
         pipeline 
-        | 'Execute SQL Query' >> beam.io.ReadFromBigQuery(query=query, use_standard_sql=True, gcs_location=temp_location)
+        | 'Execute SQL Query' >> beam.io.ReadFromBigQuery(query=query, use_standard_sql=use_standard_sql, gcs_location=temp_location)
     )
