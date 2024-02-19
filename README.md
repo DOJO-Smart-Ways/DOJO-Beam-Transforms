@@ -15,10 +15,31 @@ This repository contains:
 - **Integration Examples**: How to integrate Apache Beam pipelines with BigQuery and other cloud services for end-to-end data processing solutions.
 - **Performance Optimization Tips**: Best practices for optimizing your Apache Beam pipelines for performance and cost.
 
-## Getting Started
+## Quick Start Guide
 
-To get started with `DOJO-Beam-Transforms`, clone this repository using:
+**Kick off your journey with `DOJO-Beam-Transforms` effortlessly!** Follow these simple steps:
 
-```bash
-git clone https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git
-```
+1. **Clone the Repository:**
+
+   Dive into the project by cloning the repository with the command below:
+   ```bash
+   git clone https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git
+   ```
+
+2. **Set Up Dependencies:**
+
+   Incorporate the project into your environment. Add this line to your `requirements.txt`:
+   ```
+   git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git#egg=dojo-beam-transforms
+   ```
+
+3. **Utilize the Components:**
+
+   Bring the power of `DOJO-Beam-Transforms` into your pipeline with ease:
+   ```python
+   from pipeline_components.input_file import read_pdf, read_and_apply_headers, read_bq
+   from pipeline_components import data_enrichment as de
+   from pipeline_components import data_cleaning as dc
+   ```
+
+**Embark on your data processing journey with `DOJO-Beam-Transforms` today!**
