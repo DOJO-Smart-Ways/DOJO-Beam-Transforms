@@ -7,7 +7,7 @@ This guide provides an example of how to write and execute a unit test for the c
 Ensure you have Apache Beam and the testing utilities installed in your environment. These are required for executing the unit tests.
 
 ```bash
-pip install apache-beam
+pip install git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git#egg=dojo-beam-transforms
 ```
 
 #### Writing the Test
