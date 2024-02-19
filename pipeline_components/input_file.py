@@ -10,16 +10,35 @@ import apache_beam as beam
 import re
 from apache_beam.io import filesystems
 
+import apache_beam as beam
+import re
+from apache_beam.io import filesystems
 
 class ReadFilesWithPrefix(beam.DoFn):
     """
-    A custom DoFn to read and process CSV files that match a specific prefix pattern.
+    A custom DoFn to read and process CSV files that match a specific prefix pattern, provided as an input.
     It reads the content of each file, assuming a CSV format, and outputs each row as a dictionary.
+    
+    Attributes:
+        prefix (str): The file prefix to match. This prefix is included in the regex pattern for file selection.
     """
-    def process(self, file_path):
-        # Check if the file path matches the expected pattern for "Employee database" CSV files.
-        # This regex checks if the file path ends with the specified pattern, allowing for directory prefixes.
-        if re.match(r'.*/Employee database.*\.csv', file_path):
+    def __init__(self, prefix, delimiter=';'):
+        """
+        Initializes the ReadFilesWithPrefix instance with a specific file prefix.
+        
+        Args:
+            prefix (str): The prefix string to match in the file names.
+        """
+        self.prefix = prefix
+        self.delimiter = delimiter
+
+    def process(self, file_path, delimiter=';'):
+        # Create a regex pattern dynamically based on the provided prefix.
+        # This pattern checks if the file path ends with the specified prefix pattern and ".csv".
+        pattern = rf'.*/{re.escape(self.prefix)}.*\.csv'
+        
+        # Check if the file path matches the expected pattern for files with the given prefix.
+        if re.match(pattern, file_path):
             # Open the file for reading. Note: 'beam.io.filesystems.FileSystems.open' is used for compatibility
             # with different filesystems (local, GCS, etc.).
             with beam.io.filesystems.FileSystems.open(file_path) as f:
@@ -27,14 +46,14 @@ class ReadFilesWithPrefix(beam.DoFn):
                 lines = f.read().decode('utf-8').strip().split('\n')
                 
                 # The first line is assumed to contain the column headers, separated by ';'.
-                columns = lines[0].split(';')
+                columns = lines[0].split(delimiter)
                 
                 # Iterate over each line after the header, creating a dictionary for each row
                 # where the keys are column names and the values are the corresponding row values.
                 for line in lines[1:]:
                     # Use 'zip' to pair each column name with its corresponding value in the current line,
                     # and create a dictionary out of these pairs.
-                    yield dict(zip(columns, line.split(';')))
+                    yield dict(zip(columns, line.split(delimiter)))
 
 def read_csvs_union(pipeline, input_pattern, delimiter=';'):
     """
@@ -53,7 +72,7 @@ def read_csvs_union(pipeline, input_pattern, delimiter=';'):
         pipeline
         | 'Match Files' >> MatchFiles(input_pattern)  # Match files based on the provided glob pattern
         | 'Read Matches Files CSVs' >> ReadMatches()  # Read matched files
-        | 'Process CSVs Files' >> beam.ParDo(ReadFilesWithPrefix(delimiter=delimiter))  # Process each file, adding 'PERIOD'
+        | 'Process CSVs Files' >> beam.ParDo(ReadFilesWithPrefix(prefix='Employee database',delimiter=delimiter))  # Process each file, adding 'PERIOD'
     )
 
 class ApplyHeadersFn(beam.DoFn):
