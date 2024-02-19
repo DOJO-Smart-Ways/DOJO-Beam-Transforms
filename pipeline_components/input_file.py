@@ -3,7 +3,56 @@ import apache_beam as beam
 import pandas as pd
 import fitz
 from apache_beam.io import fileio
+import re
+from apache_beam.io.fileio import MatchFiles, ReadMatches
+from apache_beam.io.filesystems import FileSystems
 
+class ProcessCSVFiles(beam.DoFn):
+    """
+    A custom DoFn to process CSV files. It reads each file, adds a 'PERIOD' column based on the file name,
+    and outputs the content as a list of dictionaries.
+    """
+    def __init__(self, delimiter=';'):
+        # Initialize the DoFn with the specified delimiter for CSV files
+        self.delimiter = delimiter
+
+    def process(self, file):
+        # Extract date from file name using regex. Assumes file names contain a date in DD.MM.YYYY format.
+        match = re.search(r'(\d{2}\.\d{2}\.\d{4})', file.metadata.path)
+        if match:
+            period = match.group(1)  # If a date is found, use it as the period
+        else:
+            period = ''  # Use '' if no date is found in the file name
+
+        # Open and read the CSV file using the provided delimiter and pandas
+        with FileSystems.open(file.metadata.path) as f:
+            df = pd.read_csv(f, delimiter=self.delimiter, engine='python')
+
+        # Add 'PERIOD' column to the DataFrame with the extracted date
+        df['PERIOD'] = period
+
+        # Convert the DataFrame to a list of dictionaries and output each record
+        yield from df.to_dict('records')
+
+def read_csvs_union(pipeline, input_pattern, delimiter=';'):
+    """
+    Constructs a pipeline for processing multiple CSV files, adding a 'PERIOD' column to each, and
+    consolidating the results into a single PCollection.
+    
+    Args:
+        pipeline: The Beam Pipeline object.
+        input_pattern: A glob pattern string to match the input CSV files. E.g. File Name => File - 28.02.2022.csv
+        delimiter: The delimiter used in the CSV files.
+        
+    Returns:
+        A PCollection containing records from all processed files, each record being a dictionary.
+    """
+    return (
+        pipeline
+        | 'Match Files' >> MatchFiles(input_pattern)  # Match files based on the provided glob pattern
+        | 'Read Matches' >> ReadMatches()  # Read matched files
+        | 'Process CSV Files' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))  # Process each file, adding 'PERIOD'
+    )
 
 class ApplyHeadersFn(beam.DoFn):
     def process(self, data_product, headers):
