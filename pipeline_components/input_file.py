@@ -50,8 +50,8 @@ def read_csvs_union(pipeline, input_pattern, delimiter=';'):
     return (
         pipeline
         | 'Match Files' >> MatchFiles(input_pattern)  # Match files based on the provided glob pattern
-        | 'Read Matches' >> ReadMatches()  # Read matched files
-        | 'Process CSV Files' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))  # Process each file, adding 'PERIOD'
+        | 'Read Matches Files CSVs' >> ReadMatches()  # Read matched files
+        | 'Process CSVs Files' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))  # Process each file, adding 'PERIOD'
     )
 
 class ApplyHeadersFn(beam.DoFn):
