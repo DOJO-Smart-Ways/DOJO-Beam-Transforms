@@ -6,33 +6,35 @@ from apache_beam.io import fileio
 import re
 from apache_beam.io.fileio import MatchFiles, ReadMatches
 from apache_beam.io.filesystems import FileSystems
+import apache_beam as beam
+import re
+from apache_beam.io import filesystems
 
-class ProcessCSVFiles(beam.DoFn):
+
+class ReadFilesWithPrefix(beam.DoFn):
     """
-    A custom DoFn to process CSV files. It reads each file, adds a 'PERIOD' column based on the file name,
-    and outputs the content as a list of dictionaries.
+    A custom DoFn to read and process CSV files that match a specific prefix pattern.
+    It reads the content of each file, assuming a CSV format, and outputs each row as a dictionary.
     """
-    def __init__(self, delimiter=';'):
-        # Initialize the DoFn with the specified delimiter for CSV files
-        self.delimiter = delimiter
-
-    def process(self, file):
-        # Extract date from file name using regex. Assumes file names contain a date in DD.MM.YYYY format.
-        match = re.search(r'(\d{2}\.\d{2}\.\d{4})', file.metadata.path)
-        if match:
-            period = match.group(1)  # If a date is found, use it as the period
-        else:
-            period = ''  # Use '' if no date is found in the file name
-
-        # Open and read the CSV file using the provided delimiter and pandas
-        with FileSystems.open(file.metadata.path) as f:
-            df = pd.read_csv(f, delimiter=self.delimiter, engine='python')
-
-        # Add 'PERIOD' column to the DataFrame with the extracted date
-        df['PERIOD'] = period
-
-        # Convert the DataFrame to a list of dictionaries and output each record
-        yield from df.to_dict('records')
+    def process(self, file_path):
+        # Check if the file path matches the expected pattern for "Employee database" CSV files.
+        # This regex checks if the file path ends with the specified pattern, allowing for directory prefixes.
+        if re.match(r'.*/Employee database.*\.csv', file_path):
+            # Open the file for reading. Note: 'beam.io.filesystems.FileSystems.open' is used for compatibility
+            # with different filesystems (local, GCS, etc.).
+            with beam.io.filesystems.FileSystems.open(file_path) as f:
+                # Read the entire file content and decode it from bytes to a string.
+                lines = f.read().decode('utf-8').strip().split('\n')
+                
+                # The first line is assumed to contain the column headers, separated by ';'.
+                columns = lines[0].split(';')
+                
+                # Iterate over each line after the header, creating a dictionary for each row
+                # where the keys are column names and the values are the corresponding row values.
+                for line in lines[1:]:
+                    # Use 'zip' to pair each column name with its corresponding value in the current line,
+                    # and create a dictionary out of these pairs.
+                    yield dict(zip(columns, line.split(';')))
 
 def read_csvs_union(pipeline, input_pattern, delimiter=';'):
     """
@@ -51,7 +53,7 @@ def read_csvs_union(pipeline, input_pattern, delimiter=';'):
         pipeline
         | 'Match Files' >> MatchFiles(input_pattern)  # Match files based on the provided glob pattern
         | 'Read Matches Files CSVs' >> ReadMatches()  # Read matched files
-        | 'Process CSVs Files' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))  # Process each file, adding 'PERIOD'
+        | 'Process CSVs Files' >> beam.ParDo(ReadFilesWithPrefix(delimiter=delimiter))  # Process each file, adding 'PERIOD'
     )
 
 class ApplyHeadersFn(beam.DoFn):
