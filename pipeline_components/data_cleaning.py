@@ -138,36 +138,3 @@ class ReplaceValues(beam.DoFn):
                 if isinstance(column_value, str) and current_value in column_value:
                     element[column] = column_value.replace(current_value, replacement)
         yield element
-
-#################################################################################################################
-# ColumnsToStringConverter ensures that values in specified columns of a PCollection's element 
-# (expected to be a dictionary) are converted to strings. This is particularly useful for ensuring data 
-# type consistency before writing to file systems or databases that require string inputs.
-#################################################################################################################
-class ColumnsToStringConverter(beam.DoFn):
-    def __init__(self, columns_to_string):
-        """
-        Initializes the ColumnsToStringConverter instance.
-        
-        Args:
-            columns_to_string (list of str): A list of column names whose values should be converted to strings.
-        """
-        self.columns_to_string = columns_to_string
-
-    def process(self, element):
-        """
-        Processes each element, converting specified column values to strings.
-        
-        Args:
-            element (dict): The input element to process, where keys are column names.
-        """
-        for column in self.columns_to_string:
-            if column in element:
-                try:
-                    if element[column] is None or element[column] == "":
-                        element[column] = " "
-                    else:
-                        element[column] = str(element[column])
-                except (ValueError, TypeError):
-                    pass
-        yield element
