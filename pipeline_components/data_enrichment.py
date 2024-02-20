@@ -403,8 +403,8 @@ def join(tabela1, tabela2, method='leftjoin'):
 
     def apply_join(pcollections):
         result = (pcollections
-                  | "CoGroupByKey" >> beam.CoGroupByKey()
-                  | "Apply Join Logic" >> beam.ParDo(join_fn))
+                  | f"CoGroupByKey {tabela1} {tabela2} {method}" >> beam.CoGroupByKey()
+                  | f"Apply Join Logic {tabela1} {tabela2} {method}" >> beam.ParDo(join_fn))
         return result
 
     return apply_join({'TABELA1': tabela1, 'TABELA2': tabela2})
@@ -421,5 +421,5 @@ def key_transform(pcollection, key_columns):
         A PCollection with elements keyed by the specified columns.
     """
     return (pcollection
-            | "Create Composite Key" >> beam.ParDo(KeyByComposite(key_columns))
-            | "Transform Key" >> beam.ParDo(CreateKeyDoFn(key_columns)))
+            | f"Create Composite Key {key_columns}" >> beam.ParDo(KeyByComposite(key_columns))
+            | f"Transform Key {key_columns}" >> beam.ParDo(CreateKeyDoFn(key_columns)))
