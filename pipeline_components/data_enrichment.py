@@ -281,8 +281,12 @@ class GenericDeriveCondition(beam.DoFn):
         if self.column in element:
             # Get the value from the element
             value = element[self.column]
-            # Map the value to a condition, using the default description if the value is not found
-            element[self.new_column] = self.map.get(value, self.default)
+
+            if value in self.map:
+                element[self.new_column] = self.map[value]
+            else:
+                element[self.new_column] = self.map.get('default', self.default)
+                
         else:
             # If the column does not exist, set the description to the default
             element[self.new_column] = self.default
