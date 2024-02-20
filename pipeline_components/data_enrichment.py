@@ -325,10 +325,10 @@ class ColumnsToStringConverter(beam.DoFn):
 class ColumnsToFloatConverter(beam.DoFn):
     def __init__(self, columns_to_float):
         """
-        Initializes the ColumnsToStringConverter instance.
+        Initializes the ColumnsToFloatConverter instance.
         
         Args:
-            columns_to_string (list of str): A list of column names whose values should be converted to strings.
+            columns_to_float (list of str): A list of column names whose values should be converted to strings.
         """
         self.columns_to_float = columns_to_float
 
@@ -343,6 +343,36 @@ class ColumnsToFloatConverter(beam.DoFn):
             if column in element and isinstance(element[column], str):
                 try:
                   element[column] = round(float(element[column]), 2)
+                except ValueError:
+                  pass
+        yield element
+
+
+
+class ColumnsToIntegerConverter(beam.DoFn):
+    def __init__(self, columns_to_integer):
+        """
+        Initializes the ColumnsToIntegerConverter instance.
+        
+        Args:
+            columns_to_integer (list of str): A list of column names whose values should be converted to strings.
+        """
+        self.columns_to_integer = columns_to_integer
+
+    def process(self, element):
+        """
+        Processes each element, converting specified column values to integer.
+        
+        Args:
+            element (dict): The input element to process, where keys are column names.
+        """
+        for column in self.columns_to_integer:
+            if column in element and isinstance(element[column], (str, float)):
+                try:
+                  if element[column] == "":
+                    element[column] = 0
+                  else:
+                    element[column] = int(element[column])
                 except ValueError:
                   pass
         yield element
