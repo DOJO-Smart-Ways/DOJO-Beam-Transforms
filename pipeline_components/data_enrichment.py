@@ -258,3 +258,33 @@ class MergeColumnsFn(beam.DoFn):
             merged_value = delimiter.join([element[col] for col in columns_to_merge])
             element[new_column_name] = merged_value
         yield element
+
+
+class GenericDeriveCondition(beam.DoFn):
+    def __init__(self, column, map, new_column, default_desc='UNKNOWN'):
+        """
+        Initializes the DoFn with the necessary parameters.
+
+        Parameters:
+        - category_column: The name of the column to check for categories.
+        - category_map: A dictionary mapping category values to descriptions.
+        - default_desc: The default description if the category column does not exist or the value is not in the category_map.
+        """
+        self.column = column
+        self.map = map
+        self.new_column = new_column
+        self.default_desc = default_desc
+
+    def process(self, element):
+        # Check if the specified column exists in the element
+        if self.column in element:
+            # Get the value from the element
+            value = element[self.column]
+            # Map the value to a condition, using the default description if the value is not found
+            element[self.new_column] = self.map.get(value, self.default_desc)
+        else:
+            # If the column does not exist, set the description to the default
+            element[self.new_column] = self.default_desc
+
+        yield element
+
