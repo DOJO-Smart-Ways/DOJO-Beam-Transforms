@@ -130,3 +130,36 @@ def read_bq(pipeline, query, temp_location, use_standard_sql=True):
         pipeline 
         | 'Execute SQL Query' >> beam.io.ReadFromBigQuery(query=query, use_standard_sql=use_standard_sql, gcs_location=temp_location)
     )
+
+def read_excel_transpose_and_dict(pipeline, input_file, tab, header_row=1):
+    """
+    Reads an Excel file, transposes the data, skips the initial rows, and converts it to a dictionary format.
+    
+    Args:
+        pipeline: The Apache Beam pipeline object.
+        input_file: The path to the input Excel file.
+        tab: The name or index of the sheet to read from the Excel file.
+        skip_rows: Number of initial rows to skip before setting the new header.
+        
+    Returns:
+        A PCollection containing dictionaries, where each dictionary represents a row
+        from the transposed Excel sheet, with the row following the skipped rows used
+        as dictionary keys.
+    """
+    def transpose_and_convert_to_dict(file):
+        # Read the specified tab from the Excel file into a DataFrame.
+        df = pd.read_excel(file, tab)
+        
+        # Transpose the DataFrame.
+        transposed_df = df.transpose()
+        
+        # Determine the new header based on the `skip_rows` parameter.
+        # This uses the row at the position `skip_rows` as the new header.
+        new_header = transposed_df.iloc[header_row]  
+        
+        # Adjust the DataFrame to start after the new header row,
+        # effectively skipping the desired number of rows before setting the header.
+        transposed_df = transposed_df[(header_row + 1):] 
+        
+        # Assign the new headers to the DataFrame.
+        transposed_df.columns = new
