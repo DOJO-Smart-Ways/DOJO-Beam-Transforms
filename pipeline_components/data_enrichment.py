@@ -381,3 +381,45 @@ class ColumnsToIntegerConverter(beam.DoFn):
                 except ValueError:
                   pass
         yield element
+
+
+def join(tabela1, tabela2, method='leftjoin'):
+    """Performs a join between two PCollections based on a common key and the specified method.
+
+    Args:
+        tabela1: The first PCollection to join.
+        tabela2: The second PCollection to join.
+        method (str): The join method, either 'leftjoin' or 'innerjoin'.
+
+    Returns:
+        A PCollection resulting from the specified join of tabela1 and tabela2.
+    """
+    if method == 'leftjoin':
+        join_fn = LeftJoinFn()
+    elif method == 'innerjoin':
+        join_fn = InnerJoinFn()
+    else:
+        raise ValueError("Unsupported join method: {}. Use 'leftjoin' or 'innerjoin'.".format(method))
+
+    def apply_join(pcollections):
+        result = (pcollections
+                  | "CoGroupByKey" >> beam.CoGroupByKey()
+                  | "Apply Join Logic" >> beam.ParDo(join_fn))
+        return result
+
+    return apply_join({'TABELA1': tabela1, 'TABELA2': tabela2})
+
+
+def key_transform(pcollection, key_columns):
+    """Applies a composite key creation and a subsequent key transformation on a PCollection.
+
+    Args:
+        pcollection: The input PCollection to transform.
+        key_columns (list of str): The columns to use for creating the composite key.
+
+    Returns:
+        A PCollection with elements keyed by the specified columns.
+    """
+    return (pcollection
+            | "Create Composite Key" >> beam.ParDo(KeyByComposite(key_columns))
+            | "Transform Key" >> beam.ParDo(CreateKeyDoFn(key_columns)))
