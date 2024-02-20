@@ -162,4 +162,8 @@ def read_excel_transpose_and_dict(pipeline, input_file, tab, header_row=1):
         transposed_df = transposed_df[(header_row + 1):] 
         
         # Assign the new headers to the DataFrame.
-        transposed_df.columns = new
+        transposed_df.columns = new_header  # Set new header
+	    transposed_df.reset_index(drop=True, inplace=True)  # Optionally reset index
+	
+	# Convert the adjusted DataFrame to a list of dictionaries
+	return transposed_df.to_dict('records')
