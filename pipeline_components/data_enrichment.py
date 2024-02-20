@@ -410,7 +410,7 @@ def join(tabela1, tabela2, method='leftjoin'):
     return apply_join({'TABELA1': tabela1, 'TABELA2': tabela2})
 
 
-def key_transform(pcollection, key_columns):
+def key_transform(pcollection, key_columns, identifier=''):
     """Applies a composite key creation and a subsequent key transformation on a PCollection.
 
     Args:
@@ -420,6 +420,7 @@ def key_transform(pcollection, key_columns):
     Returns:
         A PCollection with elements keyed by the specified columns.
     """
+    identifier_suffix = f"_{identifier}" if identifier else ""
     return (pcollection
-            | f"Create Composite Key {key_columns}" >> beam.ParDo(KeyByComposite(key_columns))
-            | f"Transform Key {key_columns}" >> beam.ParDo(CreateKeyDoFn(key_columns)))
+            | f"Create Composite Key {key_columns} on {identifier_suffix}" >> beam.ParDo(KeyByComposite(key_columns))
+            | f"Transform Key {key_columns} on {identifier_suffix}" >> beam.ParDo(CreateKeyDoFn(key_columns)))
