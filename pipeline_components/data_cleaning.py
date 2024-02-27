@@ -1,5 +1,44 @@
 import apache_beam as beam
 
+class ChangeDataFormat(beam.DoFn):
+    def __init__(self, date_columns, input_format, output_format='%Y-%m-%d'):
+
+        """
+        Initialize the DoFn class.
+
+        Parameters:
+        - date_column: The name of the column containing the date string.
+        - input_format: The strftime format string for the input date format.
+        - output_format: The strftime format string for the output date format. Defaults to '%Y-%m-%d'.
+        """
+        self.date_columns = date_columns
+        self.input_format = input_format
+        self.output_format = output_format
+
+    def process(self, element):
+        from datetime import datetime
+        """
+        Process each element to format the dates in the specified columns.
+
+        Parameters:
+        - element: The input element to process.
+        """
+        for date_column in self.date_columns:
+            date_str = element.get(date_column)
+            if date_str:
+                try:
+                    # Parse the date using the input format
+                    date_obj = datetime.strptime(date_str, self.input_format)
+                    # Format the date into the desired output format
+                    formatted_date = date_obj.strftime(self.output_format)
+                    # Update the element with the formatted date
+                    element[date_column] = formatted_date
+                except ValueError:
+                    # Handle the case where the date format is incorrect
+                    # In a real scenario, you might want to log this or handle it differently
+                    pass
+        yield element
+
 class HandleNaN(beam.DoFn):
     """
     Treatment of NaN values ​​in the column
