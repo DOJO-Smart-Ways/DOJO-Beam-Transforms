@@ -1,5 +1,20 @@
 import apache_beam as beam
 
+class HandleNaN(beam.DoFn):
+    """
+    Treatment of NaN values ​​in the column
+    """
+    def process(self, element):
+        import math
+        for key, value in element.items():
+            if isinstance(value, list):
+                # Replace nan in lists
+                element[key] = ["" if isinstance(item, float) and math.isnan(item) else item for item in value]
+            elif value is None or (isinstance(value, float) and math.isnan(value)):
+                # Replace single nan values
+                element[key] = ''
+
+        yield element
 
 class FilterColumnValues(beam.DoFn):
     """
