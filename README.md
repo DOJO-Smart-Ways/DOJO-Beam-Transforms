@@ -42,4 +42,31 @@ This repository contains:
    from pipeline_components import data_cleaning as dc
    ```
 
+## Pipeline Deployment with Docker image
+
+## Prerequisites
+
+- **Docker installed on your machine.**
+- **Google Cloud SDK installed..**
+
+1. **Clone the Dockerfile**
+
+2. **Build the Docker Image**
+   Inside the folder where Dockerfile is located run: `docker build -t image_name .`
+
+3. **Authenticate with Google Cloud**
+   Configure Docker to authenticate requests for Artifact Registry using the following command: `gcloud auth configure-docker [REGION]-docker.pkg.dev`
+
+5. **Tag your Docker image**
+   Use the following command: `docker tag image_name [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/image_name`
+
+6. **Push the Docker image to Artifact Registry**
+   Use the following command: `docker push [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/image_name`
+
+7. **Run the Dataflow Pipeline with Custom Container**
+  Add these two parameters to yout pipeline options
+      pipeline_options = {
+       'sdk_container_image': 'us-central1-docker.pkg.dev/nidec-ga/dojo-beam/dojo_beam',
+       'sdk_location': 'container'}
+
 **Embark on your data processing journey with `DOJO-Beam-Transforms` today!**
