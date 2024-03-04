@@ -31,12 +31,13 @@ class ProcessCSVFiles(beam.DoFn):
         # Return records as dictionaries
         yield from df.to_dict('records')
 
-def read_csvs_union(pipeline, input_pattern, delimiter=';'):
-    return (
+def read_csvs_union(pipeline, input_pattern, delimiter=';', identifier=''):
+    identifier_suffix = f"_{identifier}" if identifier else ""
+	return (
         pipeline
-        | 'Match Files' >> MatchFiles(input_pattern)
-        | 'Read Matches 2' >> ReadMatches()
-        | 'Process CSV Files' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))
+        | f'Match Files {identifier_suffix}' >> MatchFiles(input_pattern)
+        | f'Read Matches {identifier_suffix}' >> ReadMatches()
+        | f'Process CSV Files {identifier_suffix}' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))
     )
 
 class ApplyHeadersFn(beam.DoFn):
@@ -47,7 +48,7 @@ class ApplyHeadersFn(beam.DoFn):
         else:
             yield "Error: Mismatched lengths of headers and data"
             
-def read_and_apply_headers(pipeline, input_header, input_file_csv, delimiter=';'):
+def read_and_apply_headers(pipeline, input_header, input_file_csv, delimiter=';', identifier=''):
     """
     Reads headers from a file and applies them to the data read from another file.
     
@@ -59,18 +60,20 @@ def read_and_apply_headers(pipeline, input_header, input_file_csv, delimiter=';'
     Returns:
         A PCollection where each element is a dictionary with headers applied to the data.
     """
+	
+	identifier_suffix = f"_{identifier}" if identifier else ""
     # Read and process headers
     headers = (pipeline
-                | 'ReadHeaderPS' >> beam.io.ReadFromText(input_header, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
-                | 'DecodeAndSplitHeaders' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1').split(';')))
+                | f'ReadHeaderPS {identifier_suffix}' >> beam.io.ReadFromText(input_header, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
+                | f'DecodeAndSplitHeaders {identifier_suffix}' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1').split(';')))
 
     # Read and process input data
     body = (pipeline
-                | 'ReadDadProductSelector' >> beam.io.ReadFromText(input_file_csv, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
-                | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
-                | 'SplitColumns' >> beam.Map(lambda line: line.split(delimiter)))  # Assuming the splitting logic is simple
+                | f'ReadDadProductSelector {identifier_suffix}' >> beam.io.ReadFromText(input_file_csv, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
+                | f'DecodeBytes {identifier_suffix}' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
+                | f'SplitColumns {identifier_suffix}' >> beam.Map(lambda line: line.split(delimiter)))  # Assuming the splitting logic is simple
 
-    return (body | 'ApplyHeaders' >> beam.ParDo(ApplyHeadersFn(), beam.pvalue.AsSingleton(headers)))
+    return (body | f'ApplyHeaders {identifier_suffix}' >> beam.ParDo(ApplyHeadersFn(), beam.pvalue.AsSingleton(headers)))
 
 
 class ProcessPDF(beam.DoFn):
@@ -103,32 +106,36 @@ class ProcessPDF(beam.DoFn):
                     }
                     yield row_data
 
-def read_pdf(pipeline, input_file):
+def read_pdf(pipeline, input_file, identifier=''):
+    identifier_suffix = f"_{identifier}" if identifier else ""
     return (pipeline
-        | 'Match PDF Files' >> fileio.MatchFiles(input_file)
-        | 'Read Matches' >> fileio.ReadMatches()
-        | 'Process PDFs' >> beam.ParDo(ProcessPDF())
+        | f'Match PDF Files {identifier_suffix}' >> fileio.MatchFiles(input_file)
+        | f'Read Matches {identifier_suffix}' >> fileio.ReadMatches()
+        | f'Process PDFs {identifier_suffix}' >> beam.ParDo(ProcessPDF())
     )
 
-def read_csv(pipeline, input_file, delimiter=';'):
+def read_csv(pipeline, input_file, delimiter=';', identifier=''):
+    identifier_suffix = f"_{identifier}" if identifier else ""
     return (
         pipeline
-        | 'Create File Path Excel' >> beam.Create([input_file])
-        | 'Read Excel' >> beam.FlatMap(lambda file: pd.read_csv(file, delimiter=delimiter, engine='python').to_dict('records'))
+        | f'Create File Path Excel {identifier_suffix}' >> beam.Create([input_file])
+        | f'Read Excel {identifier_suffix}' >> beam.FlatMap(lambda file: pd.read_csv(file, delimiter=delimiter, engine='python').to_dict('records'))
     )
 
 
-def read_txt(pipeline, input_file, skip_header_lines=0):
+def read_txt(pipeline, input_file, skip_header_lines=0, identifier=''):
+    identifier_suffix = f"_{identifier}" if identifier else ""
     return (
         pipeline
-        | 'Read Txt' >> beam.io.ReadFromText(input_file, skip_header_lines=skip_header_lines, coder=beam.coders.coders.BytesCoder())
-        | 'DecodeBytes' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
+        | f'Read Txt {identifier_suffix}' >> beam.io.ReadFromText(input_file, skip_header_lines=skip_header_lines, coder=beam.coders.coders.BytesCoder())
+        | f'DecodeBytes {identifier_suffix}' >> beam.Map(lambda bytes_line: bytes_line.decode('iso-8859-1'))
     )
 
-def read_bq(pipeline, query, temp_location, use_standard_sql=True):
+def read_bq(pipeline, query, temp_location, use_standard_sql=True, identifier=''):
+    identifier_suffix = f"_{identifier}" if identifier else ""
     return (
         pipeline 
-        | 'Execute SQL Query' >> beam.io.ReadFromBigQuery(query=query, use_standard_sql=use_standard_sql, gcs_location=temp_location)
+        | f'Execute SQL Query {identifier_suffix}' >> beam.io.ReadFromBigQuery(query=query, use_standard_sql=use_standard_sql, gcs_location=temp_location)
     )
 
 def read_excel_transpose_and_dict(pipeline, input_file, tab, header_row=1):
