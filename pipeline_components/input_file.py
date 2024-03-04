@@ -33,7 +33,7 @@ class ProcessCSVFiles(beam.DoFn):
 
 def read_csvs_union(pipeline, input_pattern, delimiter=';', identifier=''):
     identifier_suffix = f"_{identifier}" if identifier else ""
-	return (
+    return (
         pipeline
         | f'Match Files {identifier_suffix}' >> MatchFiles(input_pattern)
         | f'Read Matches {identifier_suffix}' >> ReadMatches()
@@ -61,7 +61,7 @@ def read_and_apply_headers(pipeline, input_header, input_file_csv, delimiter=';'
         A PCollection where each element is a dictionary with headers applied to the data.
     """
 	
-	identifier_suffix = f"_{identifier}" if identifier else ""
+    identifier_suffix = f"_{identifier}" if identifier else ""
     # Read and process headers
     headers = (pipeline
                 | f'ReadHeaderPS {identifier_suffix}' >> beam.io.ReadFromText(input_header, skip_header_lines=0, coder=beam.coders.coders.BytesCoder())
