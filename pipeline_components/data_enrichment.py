@@ -486,7 +486,7 @@ class ConvertDateFn(beam.DoFn):
     format and convert them to the output format, updating each element accordingly.
     """
     
-    def __init__(self, input_column, input_format, output_format):
+    def __init__(self, input_column, date_formats):
         """
         Initializes the ConvertDateFn class with specific formatting details.
         
@@ -496,8 +496,7 @@ class ConvertDateFn(beam.DoFn):
             output_format (str): The strftime-compatible formatting string for the output dates.
         """
         self.input_column = input_column
-        self.input_format = input_format
-        self.output_format = output_format
+        self.date_formats = date_formats
     
     def process(self, element):
         from datetime import datetime
@@ -514,19 +513,22 @@ class ConvertDateFn(beam.DoFn):
         """
         # Extract the date string from the specified input column.
         date_str = element[self.input_column]
+        date_obj = None
 
         # Attempt to parse the date string according to the specified input format.
-        try:
-            date_obj = datetime.strptime(date_str, self.input_format)
-        except ValueError:
-            # If parsing fails, raise an error with a helpful message.
-            raise ValueError(f"Invalid date format for '{date_str}' in column '{self.input_column}'. Expected format: {self.input_format}")
+        for format in self.date_formats:
+            try:
+                date_obj = datetime.strptime(date_str, format)
+                break
+            except ValueError:
+                # If parsing fails, raise an error with a helpful message.
+                raise ValueError(f"Invalid date format for '{date_str}' in column '{self.input_column}'. Expected format: {format}")
+            
+        if date_obj is None:
+            raise ValueError("Data no formato inválido: {}".format(date_str))
         
-        # Convert the parsed date object to the specified output format.
-        formatted_date_str = date_obj.strftime(self.output_format)
-
         # Update the element with the new date string in the specified input column.
-        element[self.input_column] = formatted_date_str
+        element[self.input_column] = date_obj
 
         # Yield the updated element back to the pipeline.
         yield element
