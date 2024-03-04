@@ -17,21 +17,34 @@ This repository contains:
 
 ## Quick Start Guide
 
-**Kick off your journey with `DOJO-Beam-Transforms` effortlessly!** Follow these simple steps:
+**Streamline Your Setup with `DOJO-Beam-Transforms`!** Begin your development journey smoothly by following this streamlined step:
 
-1. **Clone the Repository:**
+1. **Initialize Your Development Environment:**
+   
+   Start by creating a new branch for your project within the `DOJO-Beam-Transforms` repository. This approach ensures you can develop and iterate on your generic classes tailored to the project's needs. Use the following commands to clone the repository and switch to a new branch named after your project:
 
-   Dive into the project by cloning the repository with the command below:
    ```bash
+   # Clone the DOJO-Beam-Transforms repository
    git clone https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git
+   cd DOJO-Beam-Transforms
+   
+   # Create and switch to a new branch named 'project_name'
+   git checkout -b project_name
    ```
 
-2. **Set Up Dependencies:**
+   Once your project-specific development is underway, you can seamlessly integrate these changes into your Jupyter notebook environment. Execute the command below to install the project branch directly:
 
-   Incorporate the project into your environment. Add this line to your `requirements.txt`:
+   ```bash
+   !pip install git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@project_name#egg=dojo-beam-transforms
    ```
-   git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git#egg=dojo-beam-transforms
-   ```
+
+   This method allows for continuous development and testing within your project's scope, enabling a more efficient workflow.
+
+2. **Consolidate Progress and Manage Dependencies:**
+
+   After validating the effectiveness of your enhancements or new features, merge your working progress from the `project_name` branch into the main branch. This step is crucial for consolidating your efforts and ensuring the broader project benefits from your contributions. Additionally, if your development introduced new dependencies, remember to update the `setup.py` file accordingly to include these dependencies. This ensures anyone pulling from the main branch or installing the package gets a version with all necessary dependencies resolved.
+
+By following this integrated approach, you maintain a clean and organized development process, facilitating collaboration and ensuring that your enhancements are systematically incorporated into the `DOJO-Beam-Transforms` project.
 
 3. **Utilize the Components:**
 
