@@ -521,8 +521,7 @@ class ConvertDateFn(beam.DoFn):
                 date_obj = datetime.strptime(date_str, format)
                 break
             except ValueError:
-                # If parsing fails, raise an error with a helpful message.
-                raise ValueError(f"Invalid date format for '{date_str}' in column '{self.input_column}'. Expected format: {format}")
+                continue
             
         if date_obj is None:
             raise ValueError("Data no formato inválido: {}".format(date_str))
