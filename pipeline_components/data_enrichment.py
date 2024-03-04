@@ -475,3 +475,58 @@ class AddPeriodColumn(beam.DoFn):
 
         # Yield the modified element back to the pipeline.
         yield element
+
+
+class ConvertDateFn(beam.DoFn):
+    """
+    A generic Apache Beam DoFn class for converting date formats within elements of a PCollection.
+    
+    This class takes the name of the input date column, the expected input date format,
+    and the desired output date format as arguments. It attempts to parse dates in the input
+    format and convert them to the output format, updating each element accordingly.
+    """
+    
+    def __init__(self, input_column, input_format, output_format):
+        """
+        Initializes the ConvertDateFn class with specific formatting details.
+        
+        Args:
+            input_column (str): The name of the column containing date strings to be converted.
+            input_format (str): The strftime-compatible formatting string of the input dates.
+            output_format (str): The strftime-compatible formatting string for the output dates.
+        """
+        self.input_column = input_column
+        self.input_format = input_format
+        self.output_format = output_format
+    
+    def process(self, element):
+        from datetime import datetime
+        """
+        Processes each element of the input PCollection, converting dates from the input
+        format to the output format.
+        
+        Args:
+            element: A dictionary representing a single record in the PCollection.
+        
+        Yields:
+            The same dictionary with the date in 'input_column' converted from 'input_format'
+            to 'output_format'.
+        """
+        # Extract the date string from the specified input column.
+        date_str = element[self.input_column]
+
+        # Attempt to parse the date string according to the specified input format.
+        try:
+            date_obj = datetime.strptime(date_str, self.input_format)
+        except ValueError:
+            # If parsing fails, raise an error with a helpful message.
+            raise ValueError(f"Invalid date format for '{date_str}' in column '{self.input_column}'. Expected format: {self.input_format}")
+        
+        # Convert the parsed date object to the specified output format.
+        formatted_date_str = date_obj.strftime(self.output_format)
+
+        # Update the element with the new date string in the specified input column.
+        element[self.input_column] = formatted_date_str
+
+        # Yield the updated element back to the pipeline.
+        yield element
