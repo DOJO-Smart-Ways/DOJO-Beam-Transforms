@@ -573,6 +573,7 @@ class MultiplyColumns(beam.DoFn):
         yield element
 
 
+
 class GenericColumnOperation(beam.DoFn):
     """
     A Beam DoFn class for performing generic operations on columns of a PCollection.
@@ -582,20 +583,12 @@ class GenericColumnOperation(beam.DoFn):
     def __init__(self, operations):
         """
         Initializes the class with a list of operations to be performed.
-
-        Parameters:
-        - operations: A list of dictionaries where each dictionary specifies an operation
-                      and its parameters. Supported operations: 'arithmetic', 'replace_missing',
-                      and 'set_type'.
         """
         self.operations = operations
 
     def process(self, element):
         """
         Processes each element based on the specified operations.
-
-        Args:
-        - element: A dictionary representing a single record in the PCollection.
         """
         for operation in self.operations:
             op_type = operation.get('type')
@@ -606,8 +599,8 @@ class GenericColumnOperation(beam.DoFn):
                 result_column = operation.get('result_column')
                 formula = operation.get('formula', lambda x: x)  # A lambda function to apply on operands
                 
-                # Gather operand values, default to 0 if not found
-                values = [element.get(col, 0) for col in operands]
+                # Gather operand values, default to 0 if not found or None
+                values = [element.get(col, 0) if element.get(col) is not None else 0 for col in operands]
                 
                 # Apply formula and update element with result
                 try:
@@ -625,10 +618,18 @@ class GenericColumnOperation(beam.DoFn):
                 # Set column data type
                 column = operation.get('column')
                 data_type = operation.get('data_type', str)  # Default to str if not specified
-                try:
-                    element[column] = data_type(element[column])
-                except ValueError:
-                    element[column] = data_type()  # Use default value of the data type on error
+                column_value = element.get(column)
+                
+                # Check for None before attempting type conversion
+                if column_value is not None:
+                    try:
+                        element[column] = data_type(column_value)
+                    except ValueError:
+                        # Handle the case where conversion is not possible
+                        element[column] = data_type()  # Use default value of the data type on error
+                else:
+                    # Optionally, handle None values differently, e.g., by setting a default value
+                    element[column] = data_type()  # Default value for None
 
         yield element
 
