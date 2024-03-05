@@ -94,12 +94,11 @@ class ProcessPDF(beam.DoFn):
                 matches = row_pattern.findall(text)
                 for match in matches:
                     row_data = {
-                        " ":match[0],
                         "EMPLOYEE_ID": match[1],
                         "FIRST_NAME": match[2],
                         "LAST_NAME": match[3],
                         "COST_CENTRE": match[5],
-                        "DEPARTAMENT": match[6].strip() if match[6] else "",
+                        "DEPARTMENT": match[6].strip() if match[6] else "",
                         "ENDING_PAYMENT": '',
                         "DIMISSAL_DATE": match[4],
                         "GROUP": match[7]
