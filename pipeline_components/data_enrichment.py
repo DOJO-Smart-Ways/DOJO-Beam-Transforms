@@ -100,88 +100,88 @@ class CreateKeyDoFn(beam.DoFn):
 
 class InnerJoinFn(beam.DoFn):
     """
-    Implements an inner join between two datasets (TABELA1 and TABELA2) grouped by a common key.
+    Implements an inner join between two datasets (TABLE1 and TABLE2) grouped by a common key.
     """
     def __init__(self, columns_to_include=None):
         """
         Initializes the InnerJoinFn instance.
         
         Args:
-            columns_to_include (list of str, optional): Columns from TABELA2 to include in the 
+            columns_to_include (list of str, optional): Columns from TABLE2 to include in the 
             output. Defaults to None, meaning all columns are included.
         """
         self.columns_to_include = columns_to_include
 
     def process(self, element):
         """
-        For each key-grouped element, performs an inner join, combining records from TABELA1 
-        and TABELA2 that share a common key.
+        For each key-grouped element, performs an inner join, combining records from TABLE1 
+        and TABLE2 that share a common key.
         
         Args:
-            element (tuple): The key and the grouped values from both TABELA1 and TABELA2.
+            element (tuple): The key and the grouped values from both TABLE1 and TABLE2.
         """
         key, grouped_values = element
-        tabela1_values = grouped_values['TABELA1']
-        tabela2_values = grouped_values['TABELA2']
+        table1_values = grouped_values['TABLE1']
+        table2_values = grouped_values['TABLE2']
 
-        if tabela1_values and tabela2_values:
-            for tabela1 in tabela1_values:
-                tabela1_value = tabela1[1]  # Unpack the tuple, assuming the record is the second element
+        if table1_values and table2_values:
+            for table1 in table1_values:
+                table1_value = table1[1]  # Unpack the tuple, assuming the record is the second element
 
-                for tabela2 in tabela2_values:
-                    tabela2_value = tabela2[1]  # Assuming the record is the second element
+                for table2 in table2_values:
+                    table2_value = table2[1]  # Assuming the record is the second element
 
                     if self.columns_to_include is not None:
-                        filtered_tabela2_value = {k: v for k, v in tabela2_value.items() if k in self.columns_to_include}
+                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in self.columns_to_include}
                     else:
-                        filtered_tabela2_value = tabela2_value
+                        filtered_table2_value = table2_value
 
-                    yield {**tabela1_value, **filtered_tabela2_value}
+                    yield {**table1_value, **filtered_table2_value}
 
 
 class LeftJoinFn(beam.DoFn):
     """
-    Implements a left join operation between two datasets, ensuring all records from TABELA1 
-    appear in the output, with matched records from TABELA2 where available.
+    Implements a left join operation between two datasets, ensuring all records from TABLE1 
+    appear in the output, with matched records from TABLE2 where available.
     """
     def __init__(self, columns_to_include=None):
         """
         Initializes the LeftJoinFn instance.
         
         Args:
-            columns_to_include (list of str, optional): Columns from TABELA2 to include in the 
+            columns_to_include (list of str, optional): Columns from TABLE2 to include in the 
             output. Defaults to None, meaning all columns are included.
         """
         self.columns_to_include = columns_to_include
 
     def process(self, element):
         """
-        For each key-grouped element, performs a left join. Outputs each TABELA1 record with 
-        matched TABELA2 records merged in based on the common key.
+        For each key-grouped element, performs a left join. Outputs each TABLE1 record with 
+        matched TABLE2 records merged in based on the common key.
         
         Args:
-            element (tuple): The key and the grouped values from both TABELA1 and TABELA2.
+            element (tuple): The key and the grouped values from both TABLE1 and TABLE2.
         """
         key, grouped_values = element
-        tabela1_values = grouped_values['TABELA1']
-        tabela2_values = grouped_values['TABELA2']
+        table1_values = grouped_values['TABLE1']
+        table2_values = grouped_values['TABLE2']
 
-        for tabela1 in tabela1_values:
-            tabela1_value = tabela1[1]  # Unpack the tuple, assuming the record is the second element
+        for table1 in table1_values:
+            table1_value = table1[1]  # Unpack the tuple, assuming the record is the second element
 
-            if tabela2_values:
-                for tabela2 in tabela2_values:
-                    tabela2_value = tabela2[1]
+            if table2_values:
+                for table2 in table2_values:
+                    table2_value = table2[1]
 
-                    # Filter the columns of tabela2_value if columns_to_include is provided
+                    # Filter the columns of table2_value if columns_to_include is provided
                     if self.columns_to_include is not None:
-                        filtered_tabela2_value = {k: v for k, v in tabela2_value.items() if k in self.columns_to_include}
+                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in self.columns_to_include}
                     else:
-                        filtered_tabela2_value = tabela2_value
+                        filtered_table2_value = table2_value
 
-                    yield {**tabela1_value, **filtered_tabela2_value}
+                    yield {**table1_value, **filtered_table2_value}
             else:
-                yield tabela1_value
+                yield table1_value
 
 
 class SplitColumnFn(beam.DoFn):
@@ -383,44 +383,320 @@ class ColumnsToIntegerConverter(beam.DoFn):
         yield element
 
 
-def join(tabela1, tabela2, method='leftjoin'):
+def join(table1, table2, method='left_join', columns_to_include=None):
     """Performs a join between two PCollections based on a common key and the specified method.
 
     Args:
-        tabela1: The first PCollection to join.
-        tabela2: The second PCollection to join.
-        method (str): The join method, either 'leftjoin' or 'innerjoin'.
+        table1: The first PCollection to join.
+        table2: The second PCollection to join.
+        method (str): The join method, either 'left_join' or 'inner_join'.
+        columns_to_include (list): To include specific columns in join.
 
     Returns:
-        A PCollection resulting from the specified join of tabela1 and tabela2.
+        A PCollection resulting from the specified join of table1 and table2.
     """
-    if method == 'leftjoin':
-        join_fn = LeftJoinFn()
-    elif method == 'innerjoin':
-        join_fn = InnerJoinFn()
+    if method == 'left_join':
+        join_fn = LeftJoinFn(columns_to_include)
+    elif method == 'inner_join':
+        join_fn = InnerJoinFn(columns_to_include)
     else:
-        raise ValueError("Unsupported join method: {}. Use 'leftjoin' or 'innerjoin'.".format(method))
+        raise ValueError("Unsupported join method: {}. Use 'left_join' or 'inner_join'.".format(method))
 
-    def apply_join(pcollections):
-        result = (pcollections
-                  | f"CoGroupByKey {tabela1} {tabela2} {method}" >> beam.CoGroupByKey()
-                  | f"Apply Join Logic {tabela1} {tabela2} {method}" >> beam.ParDo(join_fn))
+    def apply_join(p_collection):
+        result = (p_collection
+                  | f"CoGroupByKey {table1} {table2} {method}" >> beam.CoGroupByKey()
+                  | f"Apply Join Logic {table1} {table2} {method}" >> beam.ParDo(join_fn))
         return result
 
-    return apply_join({'TABELA1': tabela1, 'TABELA2': tabela2})
+    return apply_join({'TABLE1': table1, 'TABLE2': table2})
 
 
-def key_transform(pcollection, key_columns, identifier=''):
+def key_transform(p_collection, key_columns, identifier=''):
     """Applies a composite key creation and a subsequent key transformation on a PCollection.
 
     Args:
-        pcollection: The input PCollection to transform.
+        p_collection: The input PCollection to transform.
         key_columns (list of str): The columns to use for creating the composite key.
 
     Returns:
         A PCollection with elements keyed by the specified columns.
     """
     identifier_suffix = f"_{identifier}" if identifier else ""
-    return (pcollection
+    return (p_collection
             | f"Create Composite Key {key_columns} on {identifier_suffix}" >> beam.ParDo(KeyByComposite(key_columns))
             | f"Transform Key {key_columns} on {identifier_suffix}" >> beam.ParDo(CreateKeyDoFn(key_columns)))
+
+
+class AddPeriodColumn(beam.DoFn):
+    """
+    A custom DoFn class for Apache Beam to dynamically add a new column to each element in a PCollection
+    based on the date information from a specified input column. The new column will contain a string
+    representing a date format specified by the user, derived from the date in the input column.
+    
+    This implementation allows specifying the names of the input and output columns dynamically, as well
+    as the format of the output date string.
+    """
+    
+    def process(self, element, input_column, output_column, date_format):
+        import calendar
+        """
+        The process method is called on each element of the input PCollection.
+        
+        Args:
+            element: A dictionary representing a single record in the PCollection.
+            input_column: The name of the column in 'element' that contains date information.
+            output_column: The name of the column to be added to 'element', which will contain the
+                           formatted date string.
+            date_format: A string representing the desired format of the output date. It should follow
+                         the Python strftime format codes.
+        
+        Yields:
+            The same element dictionary with an added column named as specified by 'output_column'. The
+            value in this column is a string formatted according to 'date_format', derived from the date
+            in 'input_column'.
+        """
+        # Ensure the specified input column is present in the element.
+        if input_column not in element:
+            raise ValueError(f"Element must contain an '{input_column}' field")
+
+        # Extract the date object from the specified input column of the element.
+        date_obj = element[input_column]
+        
+        # Use the calendar module to find the last day of the month for the given date.
+        last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
+        
+        # Create a new date object with the last day of the month.
+        last_day_date_obj = date_obj.replace(day=last_day)
+
+        # Format the date according to the specified format.
+        formatted_date_str = last_day_date_obj.strftime(date_format)
+
+        # Add the new column to the element with the specified name and the formatted date string.
+        element[output_column] = formatted_date_str
+
+        # Yield the modified element back to the pipeline.
+        yield element
+
+
+class ConvertDateFn(beam.DoFn):
+    """
+    A generic Apache Beam DoFn class for converting date formats within elements of a PCollection.
+    
+    This class takes the name of the input date column, the expected input date format,
+    and the desired output date format as arguments. It attempts to parse dates in the input
+    format and convert them to the output format, updating each element accordingly.
+    """
+    
+    def __init__(self, input_column, date_formats):
+        """
+        Initializes the ConvertDateFn class with specific formatting details.
+        
+        Args:
+            input_column (str): The name of the column containing date strings to be converted.
+            input_format (str): The strftime-compatible formatting string of the input dates.
+            output_format (str): The strftime-compatible formatting string for the output dates.
+        """
+        self.input_column = input_column
+        self.date_formats = date_formats
+    
+    def process(self, element):
+        from datetime import datetime
+        """
+        Processes each element of the input PCollection, converting dates from the input
+        format to the output format.
+        
+        Args:
+            element: A dictionary representing a single record in the PCollection.
+        
+        Yields:
+            The same dictionary with the date in 'input_column' converted from 'input_format'
+            to 'output_format'.
+        """
+        # Extract the date string from the specified input column.
+        date_str = element[self.input_column]
+        date_obj = None
+
+        # Attempt to parse the date string according to the specified input format.
+        for format in self.date_formats:
+            try:
+                date_obj = datetime.strptime(date_str, format)
+                break
+            except ValueError:
+                continue
+            
+        if date_obj is None:
+            raise ValueError("Data no formato inválido: {}".format(date_str))
+        
+        # Update the element with the new date string in the specified input column.
+        element[self.input_column] = date_obj
+
+        # Yield the updated element back to the pipeline.
+        yield element
+
+
+class MultiplyColumns(beam.DoFn):
+    """
+    A custom DoFn class that multiplies the values of specified columns by a given factor.
+    
+    Attributes:
+        columns (list of str): The names of the columns whose values will be multiplied.
+        factor (float): The factor by which to multiply the columns' values.
+    """
+    
+    def __init__(self, columns, factor):
+        """
+        Initializes the MultiplyColumns instance with the target columns and multiplication factor.
+        
+        Args:
+            columns (list of str): The names of the columns to modify.
+            factor (float): The multiplication factor.
+        """
+        self.columns = columns
+        self.factor = factor
+    
+    def process(self, element):
+        """
+        Processes each element of the input PCollection, multiplying the value of each specified
+        column by the predetermined factor.
+        
+        Args:
+            element: A dictionary representing a single record in the PCollection.
+        
+        Yields:
+            The modified element with the specified columns' values multiplied by the factor.
+        """
+        for column in self.columns:
+            # Check if the specified column exists in the element
+            if column in element and element[column] != '':
+                # Multiply the column value by the factor
+                element[column] = float(element[column]) * self.factor
+        
+        yield element
+
+
+
+class GenericArithmeticOperation(beam.DoFn):
+    """
+    A Beam DoFn class for performing generic operations on columns of a PCollection.
+    Operations include arithmetic calculations, replacing missing values, and type conversion.
+
+    """
+    
+    def __init__(self, operations):
+        """
+        Initializes the class with a list of operations to be performed.
+        operations = [
+            {
+            'operands': ['COLUMN_1', 'COLUMN_2', 'COLUMN_3'],
+            'result_column': 'COLUMN_4',
+            'formula': lambda c1, c2, c3: (c1 + c2) / c3 if c3 else 0  # Avoid division by zero
+            }
+        ]
+        """
+        self.operations = operations
+
+    def process(self, element):
+        """
+        Processes each element based on the specified operations.
+        """
+        for operation in self.operations:
+            # Perform arithmetic operation
+            operands = operation.get('operands', [])
+            result_column = operation.get('result_column')
+            formula = operation.get('formula', lambda x: x)  # A lambda function to apply on operands
+            
+            # Gather operand values, default to 0 if not found or None
+            values = [element.get(col, 0) if element.get(col) is not None else 0 for col in operands]
+            
+            # Apply formula and update element with result
+            try:
+                element[result_column] = formula(*values)
+            except Exception as e:
+                element[result_column] = None  # or any default value on error
+
+        yield element
+
+
+class ReplaceMissingValues(beam.DoFn):
+    """
+    An Apache Beam DoFn class that replaces missing or None values in a specified column
+    with a custom text.
+    """
+    
+    def __init__(self, column_name, replacement_text):
+        """
+        Initializes the ReplaceMissingValues instance.
+        
+        Args:
+            column_name (str): The name of the column to check for missing values.
+            replacement_text (str): The text to use as a replacement for missing values.
+        """
+        self.column_name = column_name
+        self.replacement_text = replacement_text
+
+    def process(self, element):
+        """
+        Processes each element, replacing missing or None values in the specified column with the custom text.
+        
+        Args:
+            element (dict): The input element to process, where keys are column names.
+        """
+        # Check if the column is missing or has a None value, and replace it with the custom text.
+        if self.column_name not in element or element[self.column_name] is None:
+            element[self.column_name] = self.replacement_text
+
+        yield element
+
+
+class ReplaceMissingValuesDoFn(beam.DoFn):
+    def __init__(self, replacements):
+        """
+        Initialize the DoFn with a dictionary of column replacements.
+        :param replacements: A dictionary where keys are column names and values are the values to replace missing entries.
+        """
+        self.replacements = replacements
+
+    def process(self, element):
+        # Iterate over the replacements and apply them as necessary
+        for column, value_to_miss in self.replacements.items():
+            # Check if the column exists and if its value is considered "missing"
+            if column not in element or element[column] in [None, '', float('nan')]:
+                element[column] = value_to_miss
+        yield element
+        
+
+class GenericDeriveConditionComplex(beam.DoFn):
+    def __init__(self, conditions, new_column, default='UNKNOWN'):
+        """
+        Initializes the DoFn with complex conditions.
+
+        Parameters:
+        - conditions: A list of dictionaries, each representing a condition (as a lambda function)
+          and its corresponding value to assign.
+        - new_column: The name of the new column to be added or updated based on the conditions.
+        - default: The default value to assign if none of the conditions match.
+        conditions = [
+            {
+            'condition': lambda x: (x['COLUMN_1'] == 'D' and x['COLUMN_2'] in ['0040.2', '0053', '0020.2', '0003.1', '0040.1']) or
+                                    (x['COLUMN_1'] == 'M' and x['COLUMN_2'] in ['0054', '0053', '0003.1', '0036.2']),
+            'value': 'VARIABLE'
+            },
+            # You can add more conditions here if needed
+        ]
+        """
+        self.conditions = conditions
+        self.new_column = new_column
+        self.default = default
+
+    def process(self, element):
+        # Evaluate each condition against the element
+        for condition in self.conditions:
+            if condition['condition'](element):
+                # If the condition is true, assign the corresponding value and break
+                element[self.new_column] = condition['value']
+                break
+        else:
+            # If no condition matched, assign the default value
+            element[self.new_column] = self.default
+
+        yield element
