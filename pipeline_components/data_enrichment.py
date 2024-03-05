@@ -568,7 +568,7 @@ class MultiplyColumns(beam.DoFn):
             # Check if the specified column exists in the element
             if column in element:
                 # Multiply the column value by the factor
-                element[column] = element[column] * self.factor
+                element[column] = float(element[column]) * self.factor
         
         yield element
 
