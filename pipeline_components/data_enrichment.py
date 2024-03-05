@@ -383,21 +383,22 @@ class ColumnsToIntegerConverter(beam.DoFn):
         yield element
 
 
-def join(table1, table2, method='left_join'):
+def join(table1, table2, method='left_join', columns_to_include=None):
     """Performs a join between two PCollections based on a common key and the specified method.
 
     Args:
         table1: The first PCollection to join.
         table2: The second PCollection to join.
         method (str): The join method, either 'left_join' or 'inner_join'.
+        columns_to_include (list): To include specific columns in join.
 
     Returns:
         A PCollection resulting from the specified join of table1 and table2.
     """
     if method == 'left_join':
-        join_fn = LeftJoinFn()
+        join_fn = LeftJoinFn(columns_to_include)
     elif method == 'inner_join':
-        join_fn = InnerJoinFn()
+        join_fn = InnerJoinFn(columns_to_include)
     else:
         raise ValueError("Unsupported join method: {}. Use 'left_join' or 'inner_join'.".format(method))
 
@@ -663,3 +664,4 @@ class ReplaceMissingValues(beam.DoFn):
             element[self.column_name] = self.replacement_text
 
         yield element
+
