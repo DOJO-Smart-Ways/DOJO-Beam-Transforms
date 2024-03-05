@@ -531,3 +531,134 @@ class ConvertDateFn(beam.DoFn):
 
         # Yield the updated element back to the pipeline.
         yield element
+
+
+class MultiplyColumns(beam.DoFn):
+    """
+    A custom DoFn class that multiplies the values of specified columns by a given factor.
+    
+    Attributes:
+        columns (list of str): The names of the columns whose values will be multiplied.
+        factor (float): The factor by which to multiply the columns' values.
+    """
+    
+    def __init__(self, columns, factor):
+        """
+        Initializes the MultiplyColumns instance with the target columns and multiplication factor.
+        
+        Args:
+            columns (list of str): The names of the columns to modify.
+            factor (float): The multiplication factor.
+        """
+        self.columns = columns
+        self.factor = factor
+    
+    def process(self, element):
+        """
+        Processes each element of the input PCollection, multiplying the value of each specified
+        column by the predetermined factor.
+        
+        Args:
+            element: A dictionary representing a single record in the PCollection.
+        
+        Yields:
+            The modified element with the specified columns' values multiplied by the factor.
+        """
+        for column in self.columns:
+            # Check if the specified column exists in the element
+            if column in element:
+                # Multiply the column value by the factor
+                element[column] = element[column] * self.factor
+        
+        yield element
+
+
+class GenericColumnOperation(beam.DoFn):
+    """
+    A Beam DoFn class for performing generic operations on columns of a PCollection.
+    Operations include arithmetic calculations, replacing missing values, and type conversion.
+    """
+    
+    def __init__(self, operations):
+        """
+        Initializes the class with a list of operations to be performed.
+
+        Parameters:
+        - operations: A list of dictionaries where each dictionary specifies an operation
+                      and its parameters. Supported operations: 'arithmetic', 'replace_missing',
+                      and 'set_type'.
+        """
+        self.operations = operations
+
+    def process(self, element):
+        """
+        Processes each element based on the specified operations.
+
+        Args:
+        - element: A dictionary representing a single record in the PCollection.
+        """
+        for operation in self.operations:
+            op_type = operation.get('type')
+            
+            if op_type == 'arithmetic':
+                # Perform arithmetic operation
+                operands = operation.get('operands', [])
+                result_column = operation.get('result_column')
+                formula = operation.get('formula', lambda x: x)  # A lambda function to apply on operands
+                
+                # Gather operand values, default to 0 if not found
+                values = [element.get(col, 0) for col in operands]
+                
+                # Apply formula and update element with result
+                try:
+                    element[result_column] = formula(*values)
+                except Exception as e:
+                    element[result_column] = None  # or any default value on error
+
+            elif op_type == 'replace_missing':
+                # Replace missing values in specified column
+                column = operation.get('column')
+                replace_with = operation.get('replace_with', 0)
+                element[column] = element.get(column, replace_with)
+
+            elif op_type == 'set_type':
+                # Set column data type
+                column = operation.get('column')
+                data_type = operation.get('data_type', str)  # Default to str if not specified
+                try:
+                    element[column] = data_type(element[column])
+                except ValueError:
+                    element[column] = data_type()  # Use default value of the data type on error
+
+        yield element
+
+
+class ReplaceMissingValues(beam.DoFn):
+    """
+    An Apache Beam DoFn class that replaces missing or None values in a specified column
+    with a custom text.
+    """
+    
+    def __init__(self, column_name, replacement_text):
+        """
+        Initializes the ReplaceMissingValues instance.
+        
+        Args:
+            column_name (str): The name of the column to check for missing values.
+            replacement_text (str): The text to use as a replacement for missing values.
+        """
+        self.column_name = column_name
+        self.replacement_text = replacement_text
+
+    def process(self, element):
+        """
+        Processes each element, replacing missing or None values in the specified column with the custom text.
+        
+        Args:
+            element (dict): The input element to process, where keys are column names.
+        """
+        # Check if the column is missing or has a None value, and replace it with the custom text.
+        if self.column_name not in element or element[self.column_name] is None:
+            element[self.column_name] = self.replacement_text
+
+        yield element
