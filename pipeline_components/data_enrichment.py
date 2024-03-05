@@ -575,7 +575,7 @@ class MultiplyColumns(beam.DoFn):
 
 
 
-class GenericColumnOperation(beam.DoFn):
+class GenericArithmeticOperation(beam.DoFn):
     """
     A Beam DoFn class for performing generic operations on columns of a PCollection.
     Operations include arithmetic calculations, replacing missing values, and type conversion.
@@ -592,45 +592,19 @@ class GenericColumnOperation(beam.DoFn):
         Processes each element based on the specified operations.
         """
         for operation in self.operations:
-            op_type = operation.get('type')
+            # Perform arithmetic operation
+            operands = operation.get('operands', [])
+            result_column = operation.get('result_column')
+            formula = operation.get('formula', lambda x: x)  # A lambda function to apply on operands
             
-            if op_type == 'arithmetic':
-                # Perform arithmetic operation
-                operands = operation.get('operands', [])
-                result_column = operation.get('result_column')
-                formula = operation.get('formula', lambda x: x)  # A lambda function to apply on operands
-                
-                # Gather operand values, default to 0 if not found or None
-                values = [element.get(col, 0) if element.get(col) is not None else 0 for col in operands]
-                
-                # Apply formula and update element with result
-                try:
-                    element[result_column] = formula(*values)
-                except Exception as e:
-                    element[result_column] = None  # or any default value on error
-
-            elif op_type == 'replace_missing':
-                # Replace missing values in specified column
-                column = operation.get('column')
-                replace_with = operation.get('replace_with', 0)
-                element[column] = element.get(column, replace_with)
-
-            elif op_type == 'set_type':
-                # Set column data type
-                column = operation.get('column')
-                data_type = operation.get('data_type', str)  # Default to str if not specified
-                column_value = element.get(column)
-                
-                # Check for None before attempting type conversion
-                if column_value is not None:
-                    try:
-                        element[column] = data_type(column_value)
-                    except ValueError:
-                        # Handle the case where conversion is not possible
-                        element[column] = data_type()  # Use default value of the data type on error
-                else:
-                    # Optionally, handle None values differently, e.g., by setting a default value
-                    element[column] = data_type()  # Default value for None
+            # Gather operand values, default to 0 if not found or None
+            values = [element.get(col, 0) if element.get(col) is not None else 0 for col in operands]
+            
+            # Apply formula and update element with result
+            try:
+                element[result_column] = formula(*values)
+            except Exception as e:
+                element[result_column] = None  # or any default value on error
 
         yield element
 
@@ -665,3 +639,19 @@ class ReplaceMissingValues(beam.DoFn):
 
         yield element
 
+
+class ReplaceMissingValuesDoFn(beam.DoFn):
+    def __init__(self, replacements):
+        """
+        Initialize the DoFn with a dictionary of column replacements.
+        :param replacements: A dictionary where keys are column names and values are the values to replace missing entries.
+        """
+        self.replacements = replacements
+
+    def process(self, element):
+        # Iterate over the replacements and apply them as necessary
+        for column, value_to_miss in self.replacements.items():
+            # Check if the column exists and if its value is considered "missing"
+            if column not in element or element[column] in [None, '', float('nan')]:
+                element[column] = value_to_miss
+        yield element
