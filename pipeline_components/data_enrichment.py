@@ -579,11 +579,19 @@ class GenericArithmeticOperation(beam.DoFn):
     """
     A Beam DoFn class for performing generic operations on columns of a PCollection.
     Operations include arithmetic calculations, replacing missing values, and type conversion.
+
     """
     
     def __init__(self, operations):
         """
         Initializes the class with a list of operations to be performed.
+        operations = [
+            {
+            'operands': ['COLUMN_1', 'COLUMN_2', 'COLUMN_3'],
+            'result_column': 'COLUMN_4',
+            'formula': lambda c1, c2, c3: (c1 + c2) / c3 if c3 else 0  # Avoid division by zero
+            }
+        ]
         """
         self.operations = operations
 
@@ -654,4 +662,41 @@ class ReplaceMissingValuesDoFn(beam.DoFn):
             # Check if the column exists and if its value is considered "missing"
             if column not in element or element[column] in [None, '', float('nan')]:
                 element[column] = value_to_miss
+        yield element
+        
+
+class GenericDeriveConditionComplex(beam.DoFn):
+    def __init__(self, conditions, new_column, default='UNKNOWN'):
+        """
+        Initializes the DoFn with complex conditions.
+
+        Parameters:
+        - conditions: A list of dictionaries, each representing a condition (as a lambda function)
+          and its corresponding value to assign.
+        - new_column: The name of the new column to be added or updated based on the conditions.
+        - default: The default value to assign if none of the conditions match.
+        conditions = [
+            {
+            'condition': lambda x: (x['COLUMN_1'] == 'D' and x['COLUMN_2'] in ['0040.2', '0053', '0020.2', '0003.1', '0040.1']) or
+                                    (x['COLUMN_1'] == 'M' and x['COLUMN_2'] in ['0054', '0053', '0003.1', '0036.2']),
+            'value': 'VARIABLE'
+            },
+            # You can add more conditions here if needed
+        ]
+        """
+        self.conditions = conditions
+        self.new_column = new_column
+        self.default = default
+
+    def process(self, element):
+        # Evaluate each condition against the element
+        for condition in self.conditions:
+            if condition['condition'](element):
+                # If the condition is true, assign the corresponding value and break
+                element[self.new_column] = condition['value']
+                break
+        else:
+            # If no condition matched, assign the default value
+            element[self.new_column] = self.default
+
         yield element
