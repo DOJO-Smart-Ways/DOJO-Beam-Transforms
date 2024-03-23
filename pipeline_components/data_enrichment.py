@@ -155,33 +155,33 @@ class LeftJoinFn(beam.DoFn):
         self.columns_to_include = columns_to_include
 
     def process(self, element):
-        """
-        For each key-grouped element, performs a left join. Outputs each TABLE1 record with 
-        matched TABLE2 records merged in based on the common key.
-        
-        Args:
-            element (tuple): The key and the grouped values from both TABLE1 and TABLE2.
-        """
         key, grouped_values = element
         table1_values = grouped_values['TABLE1']
         table2_values = grouped_values['TABLE2']
 
+        # Determine the full set of columns to include from TABLE2
+        all_columns = self.columns_to_include if self.columns_to_include is not None else None
+
         for table1 in table1_values:
-            table1_value = table1[1]  # Unpack the tuple, assuming the record is the second element
+            table1_value = table1[1]  # Assuming the record is the second element in the tuple
 
             if table2_values:
                 for table2 in table2_values:
                     table2_value = table2[1]
-
-                    # Filter the columns of table2_value if columns_to_include is provided
-                    if self.columns_to_include is not None:
-                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in self.columns_to_include}
+                    if all_columns is not None:
+                        # Include only specified columns from TABLE2
+                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in all_columns}
                     else:
                         filtered_table2_value = table2_value
 
                     yield {**table1_value, **filtered_table2_value}
             else:
-                yield table1_value
+                # Ensure the output format is consistent, even for TABLE1 records with no TABLE2 match
+                if all_columns is not None:
+                    no_match_table2_value = {k: None for k in all_columns}
+                    yield {**table1_value, **no_match_table2_value}
+                else:
+                    yield table1_value
 
 
 class SplitColumnFn(beam.DoFn):
@@ -255,7 +255,7 @@ class MergeColumnsFn(beam.DoFn):
         """
         for columns_to_merge, new_column_name, delimiter in self.merge_instructions:
             # Join the specified columns with the provided delimiter
-            merged_value = delimiter.join([element[col] for col in columns_to_merge])
+            merged_value = delimiter.join(str[element[col] for col in columns_to_merge])
             element[new_column_name] = merged_value
         yield element
 
@@ -525,7 +525,7 @@ class ConvertDateFn(beam.DoFn):
                 continue
             
         if date_obj is None:
-            raise ValueError("Data no formato inválido: {}".format(date_str))
+            raise ValueError(f"Data no formato inválido: {date_str}")
         
         # Update the element with the new date string in the specified input column.
         element[self.input_column] = date_obj
