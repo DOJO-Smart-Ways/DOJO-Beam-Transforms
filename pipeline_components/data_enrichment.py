@@ -244,7 +244,7 @@ class MergeColumnsFn(beam.DoFn):
         - The list of column names to be merged.
         - The name of the new column after merging.
         - An optional delimiter to use in the merge, defaulting to an empty string.
-        
+
         :param merge_instructions: List of tuples (list of columns to merge, new column name, delimiter)
         """
         self.merge_instructions = merge_instructions
@@ -254,11 +254,16 @@ class MergeColumnsFn(beam.DoFn):
         Processes each element to merge columns based on the initialized merge instructions.
         """
         for columns_to_merge, new_column_name, delimiter in self.merge_instructions:
-            # Join the specified columns with the provided delimiter
-            merged_value = delimiter.join(str[element[col] for col in columns_to_merge])
-            element[new_column_name] = merged_value
+            # Check if all columns to merge exist in the element
+            if all(col in element for col in columns_to_merge):
+                # Join the specified columns with the provided delimiter
+                merged_value = delimiter.join([str(element[col]) for col in columns_to_merge])
+                element[new_column_name] = merged_value
+            else:
+                # Optionally, handle the case where not all columns are present
+                # For example, you could set a default value or log a warning
+                element[new_column_name] = 'DEFAULT_VALUE_OR_LOG_WARNING'
         yield element
-
 
 class GenericDeriveCondition(beam.DoFn):
     def __init__(self, column, map, new_column, default='UNKNOWN'):

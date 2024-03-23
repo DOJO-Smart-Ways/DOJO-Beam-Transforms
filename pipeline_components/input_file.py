@@ -40,6 +40,29 @@ def read_csvs_union(pipeline, input_pattern, delimiter=';', identifier=''):
         | f'Process CSV Files {identifier_suffix}' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))
     )
 
+class ProcessExcelFiles(beam.DoFn):
+    def __init__(self, skip_rows=None, tab=None):
+        self.skip_rows = skip_rows
+        self.tab = 0 if tab is None else tab
+
+    def process(self, file):
+        # Read Excel file, assuming it's the first sheet; adjust if necessary
+        with FileSystems.open(file.metadata.path) as f:
+            df = pd.read_excel(f, skiprows=self.skip_rows, sheet_name=self.tab)
+
+        df['SOURCE'] = file.metadata.path
+        # Return records as dictionaries
+        yield from df.to_dict('records')
+
+def read_excels_union(pipeline, input_pattern, identifier='', skiprows=None, tab=None):
+    identifier_suffix = f"_{identifier}" if identifier else ""
+    return (
+        pipeline
+        | f'Match Files {identifier_suffix}' >> MatchFiles(input_pattern)
+        | f'Read Matches {identifier_suffix}' >> ReadMatches()
+        | f'Process Excel Files {identifier_suffix}' >> beam.ParDo(ProcessExcelFiles(skip_rows=skiprows, tab=tab))
+    )
+
 class ApplyHeadersFn(beam.DoFn):
     def process(self, data_product, headers):
         if len(headers) == len(data_product):
