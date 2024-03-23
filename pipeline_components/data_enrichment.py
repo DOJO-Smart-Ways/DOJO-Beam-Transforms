@@ -124,6 +124,9 @@ class InnerJoinFn(beam.DoFn):
         table1_values = grouped_values['TABLE1']
         table2_values = grouped_values['TABLE2']
 
+        # Determine the full set of columns to include from TABLE2
+        all_columns = self.columns_to_include if self.columns_to_include is not None else None
+
         if table1_values and table2_values:
             for table1 in table1_values:
                 table1_value = table1[1]  # Unpack the tuple, assuming the record is the second element
@@ -131,8 +134,8 @@ class InnerJoinFn(beam.DoFn):
                 for table2 in table2_values:
                     table2_value = table2[1]  # Assuming the record is the second element
 
-                    if self.columns_to_include is not None:
-                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in self.columns_to_include}
+                    if all_columns is not None:
+                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in all_columns}
                     else:
                         filtered_table2_value = table2_value
 
@@ -173,12 +176,16 @@ class LeftJoinFn(beam.DoFn):
                         filtered_table2_value = {k: v for k, v in table2_value.items() if k in all_columns}
                     else:
                         filtered_table2_value = table2_value
-
+                        
+                    for k in filtered_table2_value.keys():
+                        if filtered_table2_value[k] is None:
+                            filtered_table2_value[k] = ''
                     yield {**table1_value, **filtered_table2_value}
+
             else:
                 # Ensure the output format is consistent, even for TABLE1 records with no TABLE2 match
                 if all_columns is not None:
-                    no_match_table2_value = {k: None for k in all_columns}
+                    no_match_table2_value = {k: '' for k in all_columns}
                     yield {**table1_value, **no_match_table2_value}
                 else:
                     yield table1_value
