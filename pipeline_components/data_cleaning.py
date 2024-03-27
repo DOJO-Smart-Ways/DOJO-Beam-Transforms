@@ -1,4 +1,6 @@
 import apache_beam as beam
+import re
+from decimal import Decimal, InvalidOperation
 
 class ChangeDateFormat(beam.DoFn):
     def __init__(self, date_columns, input_format, output_format='%Y-%m-%d'):
@@ -302,9 +304,8 @@ class ExtractDecimalFn(beam.DoFn):
             # Convert the cleaned string to a Decimal without rounding
             return Decimal(cleaned_string)
         except InvalidOperation:
-            # If conversion to Decimal fails, print an error message and return None
-            print(f"Invalid value: {input_string} got {cleaned_string}")
-            return None
+            # If conversion to Decimal fails, raise an error message and return None
+            raise ValueError(f"Invalid value: {input_string} (cleaned: {cleaned_string})")
 
     """
     Usage Examples:
