@@ -536,14 +536,14 @@ class ConvertDateFn(beam.DoFn):
             except ValueError:
                 continue
             
-        if date_obj is None:
-            raise ValueError(f"Data no formato inválido: {date_str}")
+        if date_obj is not None:
+            #raise ValueError(f"Data no formato inválido: {date_str}")
         
-        # Update the element with the new date string in the specified input column.
-        element[self.input_column] = date_obj
+            # Update the element with the new date string in the specified input column.
+            element[self.input_column] = date_obj
 
-        # Yield the updated element back to the pipeline.
-        yield element
+            # Yield the updated element back to the pipeline.
+            yield element
 
 
 class MultiplyColumns(beam.DoFn):

@@ -339,3 +339,20 @@ class ReplacePatterns(beam.DoFn):
             if column in element and re.match(self.pattern, element[column]):
                 element[column] = re.sub(self.pattern, self.replacement, element[column])
         yield element
+
+
+class DeduplicateFn(beam.DoFn):
+    # this only works if all values in the dictionary are themselves hashable.
+    def __init__(self):
+        self.seen = set()
+
+    def process(self, element):
+        # Convert the element to a hashable type if it's a dictionary
+        if isinstance(element, dict):
+            hashable_element = tuple(sorted(element.items()))
+        else:
+            hashable_element = element
+
+        if hashable_element not in self.seen:
+            self.seen.add(hashable_element)
+            yield element

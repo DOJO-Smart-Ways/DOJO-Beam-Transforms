@@ -219,7 +219,16 @@ class ProcessExcelFiles(beam.DoFn):
         with FileSystems.open(file.metadata.path) as f:
             df = pd.read_excel(f, skiprows=self.skip_rows, sheet_name=self.tab)
 
-        df['SOURCE'] = file.metadata.path
+        # If tab is an integer, fetch the actual sheet name for inclusion in SOURCE
+        if isinstance(self.tab, int):
+            xls = pd.ExcelFile(file.metadata.path)
+            sheet_name = xls.sheet_names[self.tab]
+        else:
+            sheet_name = self.tab
+
+        # Append the file path and sheet name to 'SOURCE'
+        df['SOURCE'] = f"{file.metadata.path}/{sheet_name}"
+
         # Return records as dictionaries
         yield from df.to_dict('records')
 
