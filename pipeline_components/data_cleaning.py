@@ -1,5 +1,6 @@
 import apache_beam as beam
 
+
 class ChangeDateFormat(beam.DoFn):
     def __init__(self, date_columns, input_format, output_format='%Y-%m-%d'):
 
