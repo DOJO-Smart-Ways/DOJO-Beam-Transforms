@@ -217,7 +217,7 @@ class ProcessExcelFiles(beam.DoFn):
         from apache_beam.io.filesystems import FileSystems
         # Read Excel file, assuming it's the first sheet; adjust if necessary
         with FileSystems.open(file.metadata.path) as f:
-            df = pd.read_excel(f, skiprows=self.skip_rows, sheet_name=self.tab)
+            df = pd.read_excel(f, skiprows=self.skip_rows, sheet_name=self.tab, dtype=str)
 
         # If tab is an integer, fetch the actual sheet name for inclusion in SOURCE
         if isinstance(self.tab, int):
