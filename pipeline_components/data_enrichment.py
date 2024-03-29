@@ -1,5 +1,6 @@
 import apache_beam as beam
-
+import re
+from decimal import Decimal, InvalidOperation
 
 class ConvertToUpperCase(beam.DoFn):
     """
@@ -716,3 +717,91 @@ class GenericDeriveConditionComplex(beam.DoFn):
             element[self.new_column] = self.default
 
         yield element
+
+
+class ColumnsToDecimalConverter(beam.DoFn):
+    """
+    A custom Apache Beam transformation to extract decimal values from one or more fields in an element.
+
+    Args:
+        columns: A list of column names to be processed.
+    """
+
+    def process(self, element, columns):
+        """
+        Processes an element, extracts decimal values from the specified fields, and replaces them with the extracted values.
+
+        Args:
+            element: The element to be processed.
+            columns: A list Variable arguments containing the names of the columns to be processed.
+
+        Yields:
+            A new element with the extracted decimal values.
+        """
+
+        for column in columns:
+            if column in element:
+                input_string = element[column]
+                cleaned_value = self.extract_decimal(input_string)
+                if cleaned_value is not None:
+                    element[column] = cleaned_value
+                else:
+                    element[column] = Decimal(0.0)  # Assign 0 when cleaned_value is None or empty string
+        yield element
+
+    def extract_decimal(self, input_string):
+        """
+        Extracts a decimal value from an input string.
+
+        Args:
+            input_string: The input string to be processed.
+
+        Returns:
+            A Decimal object representing the extracted value, or None if extraction fails.
+        """
+        if input_string is None or input_string == '':
+            return Decimal(0.0)  # Return 0 if input_string is None or empty string
+        
+        # Handle negative values enclosed in parentheses using regex
+        cleaned_string = re.sub(r'\((.*?)\)', lambda x: '-' + x.group(1), input_string)
+        # Replace all non-numeric characters except commas and minus signs with an empty string
+        cleaned_string = re.sub(r'[^\d,-]', '', cleaned_string).replace(',', '.')
+        
+        try:
+            # Convert the cleaned string to a Decimal without rounding
+            return Decimal(cleaned_string)
+        except InvalidOperation:
+            # If conversion to Decimal fails, raise an error message and return None
+            raise ValueError(f"Invalid value: {input_string} (cleaned: {cleaned_string})")
+
+    """
+    Usage Examples:
+    - Extracting decimal values from a dataset:
+        pipeline = beam.Pipeline()
+        data = [{'amount': '$1,234.56'}, {'amount': '(1,500.25)'}]
+        extracted_data = (
+            pipeline
+            | 'Create Data' >> beam.Create(data)
+            | 'Extract Decimals' >> beam.ParDo(ExtractDecimalFn(), 'amount')
+            | beam.Map(print)
+        )
+        pipeline.run()
+
+    - Extracting and cleaning monetary values:
+        pipeline = beam.Pipeline()
+        data = [{'amount': '$1.234,56'}, {'amount': '(1.500,25)'}]
+        cleaned_data = (
+            pipeline
+            | 'Create Data' >> beam.Create(data)
+            | 'Extract Decimals' >> beam.ParDo(ExtractDecimalFn(), 'amount')
+            | beam.Filter(lambda x: x['amount'] is not None)  # Filtering out invalid values
+            | beam.Map(lambda x: {'cleaned_amount': x['amount']})  # Optionally, store cleaned values in a new field
+            | beam.Map(print)
+        )
+        pipeline.run()
+
+    Notes:
+    - This method is particularly useful for handling monetary values, as it avoids rounding discrepancies.
+    - It extracts decimal values from input strings, including cases where negative values are represented within parentheses.
+    - If decimal values are already separeted by dots, please try a simple cast to Decimal Type. 
+    """
