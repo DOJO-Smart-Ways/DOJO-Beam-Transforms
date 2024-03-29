@@ -124,9 +124,6 @@ class InnerJoinFn(beam.DoFn):
         table1_values = grouped_values['TABLE1']
         table2_values = grouped_values['TABLE2']
 
-        # Determine the full set of columns to include from TABLE2
-        all_columns = self.columns_to_include if self.columns_to_include is not None else None
-
         if table1_values and table2_values:
             for table1 in table1_values:
                 table1_value = table1[1]  # Unpack the tuple, assuming the record is the second element
@@ -134,8 +131,8 @@ class InnerJoinFn(beam.DoFn):
                 for table2 in table2_values:
                     table2_value = table2[1]  # Assuming the record is the second element
 
-                    if all_columns is not None:
-                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in all_columns}
+                    if self.columns_to_include is not None:
+                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in self.columns_to_include}
                     else:
                         filtered_table2_value = table2_value
 
@@ -158,6 +155,13 @@ class LeftJoinFn(beam.DoFn):
         self.columns_to_include = columns_to_include
 
     def process(self, element):
+        """
+        For each key-grouped element, performs a left join. Outputs each TABLE1 record with 
+        matched TABLE2 records merged in based on the common key.
+        
+        Args:
+            element (tuple): The key and the grouped values from both TABLE1 and TABLE2.
+        """
         key, grouped_values = element
         table1_values = grouped_values['TABLE1']
         table2_values = grouped_values['TABLE2']
@@ -536,14 +540,14 @@ class ConvertDateFn(beam.DoFn):
             except ValueError:
                 continue
             
-        if date_obj is not None:
-            #raise ValueError(f"Data no formato inválido: {date_str}")
+        if date_obj is None:
+            raise ValueError("Data no formato inválido: {}".format(date_str))
         
-            # Update the element with the new date string in the specified input column.
-            element[self.input_column] = date_obj
+        # Update the element with the new date string in the specified input column.
+        element[self.input_column] = date_obj
 
-            # Yield the updated element back to the pipeline.
-            yield element
+        # Yield the updated element back to the pipeline.
+        yield element
 
 
 class MultiplyColumns(beam.DoFn):
