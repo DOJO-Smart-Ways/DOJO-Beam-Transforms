@@ -726,8 +726,10 @@ class ColumnsToDecimalConverter(beam.DoFn):
     Args:
         columns: A list of column names to be processed.
     """
+    def __init__(self, columns):
+        self.columns = columns
 
-    def process(self, element, columns):
+    def process(self, element):
         """
         Processes an element, extracts decimal values from the specified fields, and replaces them with the extracted values.
 
@@ -739,7 +741,7 @@ class ColumnsToDecimalConverter(beam.DoFn):
             A new element with the extracted decimal values.
         """
 
-        for column in columns:
+        for column in self.columns:
             if column in element:
                 input_string = element[column]
                 cleaned_value = self.extract_decimal(input_string)
