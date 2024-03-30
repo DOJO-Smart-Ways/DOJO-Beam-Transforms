@@ -752,58 +752,21 @@ class ColumnsToDecimalConverter(beam.DoFn):
         yield element
 
     def extract_decimal(self, input_string):
-        """
-        Extracts a decimal value from an input string.
+      """
+      Converts an input value to a Decimal object with 5 decimal places.
 
-        Args:
-            input_string: The input string to be processed.
+      Args:
+          input_value: The input value to be converted.
 
-        Returns:
-            A Decimal object representing the extracted value, or None if extraction fails.
-        """
-        if input_string is None or input_string == '':
-            return Decimal(0.0)  # Return 0 if input_string is None or empty string
-        
-        # Handle negative values enclosed in parentheses using regex
-        cleaned_string = re.sub(r'\((.*?)\)', lambda x: '-' + x.group(1), input_string)
-        # Replace all non-numeric characters except commas and minus signs with an empty string
-        cleaned_string = re.sub(r'[^\d,-]', '', cleaned_string).replace(',', '.')
-        
-        try:
-            # Convert the cleaned string to a Decimal without rounding
-            return Decimal(cleaned_string)
-        except InvalidOperation:
-            # If conversion to Decimal fails, raise an error message and return None
-            raise ValueError(f"Invalid value: {input_string} (cleaned: {cleaned_string})")
+      Returns:
+          A Decimal object representing the input value with 5 decimal places.
+      """
+      if input_string is None or input_string == "" or isinstance(input_string, str):
+          return Decimal(0)  # Return 0 if input_value is None
 
-    """
-    Usage Examples:
-    - Extracting decimal values from a dataset:
-        pipeline = beam.Pipeline()
-        data = [{'amount': '$1,234.56'}, {'amount': '(1,500.25)'}]
-        extracted_data = (
-            pipeline
-            | 'Create Data' >> beam.Create(data)
-            | 'Extract Decimals' >> beam.ParDo(ExtractDecimalFn(), 'amount')
-            | beam.Map(print)
-        )
-        pipeline.run()
-
-    - Extracting and cleaning monetary values:
-        pipeline = beam.Pipeline()
-        data = [{'amount': '$1.234,56'}, {'amount': '(1.500,25)'}]
-        cleaned_data = (
-            pipeline
-            | 'Create Data' >> beam.Create(data)
-            | 'Extract Decimals' >> beam.ParDo(ExtractDecimalFn(), 'amount')
-            | beam.Filter(lambda x: x['amount'] is not None)  # Filtering out invalid values
-            | beam.Map(lambda x: {'cleaned_amount': x['amount']})  # Optionally, store cleaned values in a new field
-            | beam.Map(print)
-        )
-        pipeline.run()
-
-    Notes:
-    - This method is particularly useful for handling monetary values, as it avoids rounding discrepancies.
-    - It extracts decimal values from input strings, including cases where negative values are represented within parentheses.
-    - If decimal values are already separeted by dots, please try a simple cast to Decimal Type. 
-    """
+      try:
+          # Convert the input value to a Decimal with 5 decimal places
+          return Decimal(input_string).quantize(Decimal('0.00000'))
+      except (InvalidOperation, ValueError):
+          # If conversion to Decimal fails, return 0
+          return Decimal(0.0)
