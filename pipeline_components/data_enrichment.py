@@ -348,27 +348,32 @@ class ColumnsToFloatConverter(beam.DoFn):
     def __init__(self, columns_to_float):
         """
         Initializes the ColumnsToFloatConverter instance.
-        
+
         Args:
-            columns_to_float (list of str): A list of column names whose values should be converted to strings.
+            columns_to_float (list of str): A list of column names whose values should be converted to floats.
         """
         self.columns_to_float = columns_to_float
 
     def process(self, element):
         """
-        Processes each element, converting specified column values to float.
-        
+        Processes each element, converting specified column values to float, while handling 'None', empty strings, and 'NaN'.
+
         Args:
             element (dict): The input element to process, where keys are column names.
         """
         for column in self.columns_to_float:
-            if column in element and isinstance(element[column], str):
-                try:
-                  element[column] = round(float(element[column]), 2)
-                except ValueError:
-                  pass
+            # Ensure the column exists in the element
+            if column in element:
+                # Handle None, empty string, and 'NaN' by setting them to None
+                if element[column] is None or element[column] == "" or str(element[column]).lower() == 'nan':
+                    element[column] = None
+                else:
+                    # Attempt to convert to float, otherwise, leave as is
+                    try:
+                        element[column] = float(element[column])
+                    except ValueError:
+                        pass
         yield element
-
 
 
 class ColumnsToIntegerConverter(beam.DoFn):
