@@ -777,7 +777,7 @@ class ColumnsToDecimalConverter(beam.DoFn):
           return Decimal(0.0)
       
 
-class ColumnCopyDoFn(beam.DoFn):
+class ColumnCopy(beam.DoFn):
     def __init__(self, copy_column_name, paste_column_name):
         """
         Initializes the ColumnCopyDoFn.
@@ -808,4 +808,30 @@ class ColumnCopyDoFn(beam.DoFn):
         # Copy the column value
         element[self.paste_column_name] = element[self.copy_column_name]
         
+        yield element
+
+class ColumnValueAssignment(beam.DoFn):
+    def __init__(self, value, new_column):
+        """
+        Initializes the DoFn with the necessary parameters.
+
+        Parameters:
+        - value: The single value to be assigned to the new column.
+        - new_column: The name of the new column.
+        """
+        self.value = value
+        self.new_column = new_column
+
+    def process(self, element):
+        """
+        Assigns the single value to the new column.
+
+        Args:
+        - element (dict): A dictionary representing a row, with column names as keys and values as values.
+
+        Yields:
+        - dict: A dictionary representing the modified row after assigning the single value to the new column.
+        """
+        # Assign the single value to the new column
+        element[self.new_column] = self.value
         yield element

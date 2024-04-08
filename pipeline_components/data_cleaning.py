@@ -196,7 +196,7 @@ class CleanNaN(beam.DoFn):
                 element[key] = None
         yield element
 
-
+#TODO: Remove DeriveSingleValue method from data cleaning. New method was moved to Data Enrichment with new name ColumnValueAssignment
 class DeriveSingleValue(beam.DoFn):
     def __init__(self, value, new_column):
         """
