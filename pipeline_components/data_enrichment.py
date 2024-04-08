@@ -775,3 +775,37 @@ class ColumnsToDecimalConverter(beam.DoFn):
       except (InvalidOperation, ValueError):
           # If conversion to Decimal fails, return 0
           return Decimal(0.0)
+      
+
+class ColumnCopyDoFn(beam.DoFn):
+    def __init__(self, copy_column_name, paste_column_name):
+        """
+        Initializes the ColumnCopyDoFn.
+
+        Args:
+            copy_column_name (str): The name of the column to copy from.
+            paste_column_name (str): The name of the column to paste into.
+        """
+        self.copy_column_name = copy_column_name
+        self.paste_column_name = paste_column_name
+
+    def process(self, element):
+        """
+        Copies the value of one column to another column in the given element.
+
+        Args:
+            element (dict): A dictionary representing a row, with column names as keys and values as values.
+
+        Yields:
+            dict: A dictionary representing the modified row after copying the column value.
+        """
+        # Validate input column names
+        if self.copy_column_name not in element:
+            raise ValueError(f"Column '{self.copy_column_name}' not found in the input data.")
+        if self.paste_column_name in element:
+            raise ValueError(f"Column '{self.paste_column_name}' already exists in the input data.")
+
+        # Copy the column value
+        element[self.paste_column_name] = element[self.copy_column_name]
+        
+        yield element
