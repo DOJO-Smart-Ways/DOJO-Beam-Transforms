@@ -1,19 +1,15 @@
 # input_file.py
 import apache_beam as beam
-import pandas as pd
-import fitz
-from apache_beam.io import fileio
-import apache_beam as beam
 
-import re
-from apache_beam.io.fileio import MatchFiles, ReadMatches
-from apache_beam.io.filesystems import FileSystems
 
 class ProcessCSVFiles(beam.DoFn):
     def __init__(self, delimiter=';'):
         self.delimiter = delimiter
 
     def process(self, file):
+        from apache_beam.io.filesystems import FileSystems
+        import pandas as pd
+        import re
         # Extract date from file name using regex
         match = re.search(r'(\d{2}\.\d{2}\.\d{4})', file.metadata.path)
         if match:
@@ -32,12 +28,39 @@ class ProcessCSVFiles(beam.DoFn):
         yield from df.to_dict('records')
 
 def read_csvs_union(pipeline, input_pattern, delimiter=';', identifier=''):
+    from apache_beam.io.fileio import MatchFiles, ReadMatches
     identifier_suffix = f"_{identifier}" if identifier else ""
     return (
         pipeline
         | f'Match Files {identifier_suffix}' >> MatchFiles(input_pattern)
         | f'Read Matches {identifier_suffix}' >> ReadMatches()
         | f'Process CSV Files {identifier_suffix}' >> beam.ParDo(ProcessCSVFiles(delimiter=delimiter))
+    )
+
+class ProcessExcelFiles(beam.DoFn):
+    def __init__(self, skip_rows=None, tab=None):
+        self.skip_rows = skip_rows
+        self.tab = 0 if tab is None else tab
+
+    def process(self, file):
+        from apache_beam.io.filesystems import FileSystems
+        import pandas as pd
+        # Read Excel file, assuming it's the first sheet; adjust if necessary
+        with FileSystems.open(file.metadata.path) as f:
+            df = pd.read_excel(f, skiprows=self.skip_rows, sheet_name=self.tab)
+
+        df['SOURCE'] = file.metadata.path
+        # Return records as dictionaries
+        yield from df.to_dict('records')
+
+def read_excels_union(pipeline, input_pattern, identifier='', skiprows=None, tab=None):
+    from apache_beam.io.fileio import MatchFiles, ReadMatches
+    identifier_suffix = f"_{identifier}" if identifier else ""
+    return (
+        pipeline
+        | f'Match Files {identifier_suffix}' >> MatchFiles(input_pattern)
+        | f'Read Matches {identifier_suffix}' >> ReadMatches()
+        | f'Process Excel Files {identifier_suffix}' >> beam.ParDo(ProcessExcelFiles(skip_rows=skiprows, tab=tab))
     )
 
 class ApplyHeadersFn(beam.DoFn):
@@ -106,6 +129,7 @@ class ProcessPDF(beam.DoFn):
                     yield row_data
 
 def read_pdf(pipeline, input_file, identifier=''):
+    from apache_beam.io import fileio
     identifier_suffix = f"_{identifier}" if identifier else ""
     return (pipeline
         | f'Match PDF Files {identifier_suffix}' >> fileio.MatchFiles(input_file)
@@ -114,6 +138,7 @@ def read_pdf(pipeline, input_file, identifier=''):
     )
 
 def read_csv(pipeline, input_file, delimiter=';', identifier=''):
+    import pandas as pd
     identifier_suffix = f"_{identifier}" if identifier else ""
     return (
         pipeline
@@ -138,7 +163,8 @@ def read_bq(pipeline, query, temp_location, use_standard_sql=True, identifier=''
     )
 
 def read_excel_transpose_and_dict(pipeline, input_file, tab, header_row=1):
-	"""
+    import pandas as pd
+    """
 	Reads an Excel file, transposes the data, skips the initial rows, and converts it to a dictionary format.
 	
 	Args:
@@ -152,30 +178,66 @@ def read_excel_transpose_and_dict(pipeline, input_file, tab, header_row=1):
 	from the transposed Excel sheet, with the row following the skipped rows used
 	as dictionary keys.
 	"""
-	def transpose_and_convert_to_dict(file):
+    def transpose_and_convert_to_dict(file):
 		# Read the specified tab from the Excel file into a DataFrame.
-		df = pd.read_excel(file, tab)
+        df = pd.read_excel(file, tab)
 		
 		# Transpose the DataFrame.
-		transposed_df = df.transpose()
+        transposed_df = df.transpose()
 		
 		# Determine the new header based on the `skip_rows` parameter.
 		# This uses the row at the position `skip_rows` as the new header.
-		new_header = transposed_df.iloc[header_row]  
+        new_header = transposed_df.iloc[header_row]  
 		
 		# Adjust the DataFrame to start after the new header row,
 		# effectively skipping the desired number of rows before setting the header.
-		transposed_df = transposed_df[(header_row + 1):] 
+        transposed_df = transposed_df[(header_row + 1):] 
 		
 		# Assign the new headers to the DataFrame.
-		transposed_df.columns = new_header  # Set new header
-		transposed_df.reset_index(drop=True, inplace=True)  # Optionally reset index
+        transposed_df.columns = new_header  # Set new header
+        transposed_df.reset_index(drop=True, inplace=True)  # Optionally reset index
 		
 		# Convert the adjusted DataFrame to a list of dictionaries
-		return transposed_df.to_dict('records')
+        return transposed_df.to_dict('records')
 		
-	return (
-		pipeline
-		| 'Create File Path' >> beam.Create([input_file])
-		| 'Read and Transpose CSV' >> beam.FlatMap(transpose_and_convert_to_dict)
-	)
+    return (
+        pipeline
+        | 'Create File Path' >> beam.Create([input_file])
+        | 'Read and Transpose CSV' >> beam.FlatMap(transpose_and_convert_to_dict)
+    )
+
+
+class ProcessExcelFiles(beam.DoFn):
+    def __init__(self, skip_rows=None, tab=None):
+        self.skip_rows = skip_rows
+        self.tab = 0 if tab is None else tab
+
+    def process(self, file):
+        import pandas as pd
+        from apache_beam.io.filesystems import FileSystems
+        # Read Excel file, assuming it's the first sheet; adjust if necessary
+        with FileSystems.open(file.metadata.path) as f:
+            df = pd.read_excel(f, skiprows=self.skip_rows, sheet_name=self.tab, dtype=str)
+
+        # If tab is an integer, fetch the actual sheet name for inclusion in SOURCE
+        if isinstance(self.tab, int):
+            xls = pd.ExcelFile(file.metadata.path)
+            sheet_name = xls.sheet_names[self.tab]
+        else:
+            sheet_name = self.tab
+
+        # Append the file path and sheet name to 'SOURCE'
+        df['SOURCE'] = f"{file.metadata.path}/{sheet_name}"
+
+        # Return records as dictionaries
+        yield from df.to_dict('records')
+
+def read_excels_union(pipeline, input_pattern, identifier='', skiprows=None, tab=None):
+    from apache_beam.io.fileio import MatchFiles, ReadMatches
+    identifier_suffix = f"_{identifier}" if identifier else ""
+    return (
+        pipeline
+        | f'Match Files {identifier_suffix}' >> MatchFiles(input_pattern)
+        | f'Read Matches {identifier_suffix}' >> ReadMatches()
+        | f'Process Excel Files {identifier_suffix}' >> beam.ParDo(ProcessExcelFiles(skip_rows=skiprows, tab=tab))
+    )

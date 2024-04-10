@@ -2,6 +2,7 @@ import apache_beam as beam
 import re
 from decimal import Decimal, InvalidOperation
 
+
 class ChangeDateFormat(beam.DoFn):
     def __init__(self, date_columns, input_format, output_format='%Y-%m-%d'):
 
@@ -141,6 +142,77 @@ class DropColumns(beam.DoFn):
             element.pop(col, None)  # Use pop with None as default to avoid KeyError if the column is missing
         yield element
 
+
+class KeepColumns(beam.DoFn):
+    """
+    A DoFn for keeping specified columns from each element in a PCollection.
+
+    This function is useful in scenarios where certain columns of data are needed
+    for further processing or analysis, allowing for the reduction of data volume and
+    simplification of the data structure.
+
+    Attributes:
+        columns (list of str): A list containing the names of the columns to be kept.
+    """
+
+    def __init__(self, columns):
+        """
+        Initializes the KeepColumns instance with the names of columns to keep.
+
+        Args:
+            columns (list of str): The names of the columns to be kept from each element.
+                                   Can be a single string if only one column needs to be kept.
+        """
+        # Ensure columns is a list to simplify processing
+        self.columns = columns if isinstance(columns, list) else [columns]
+
+    def process(self, element):
+        """
+        Processes each element in the PCollection, keeping only specified columns.
+
+        Args:
+            element (dict): An element of the PCollection, expected to be a dictionary
+                            with keys corresponding to column names.
+
+        Yields:
+            A dictionary containing only the specified columns to be kept.
+        """
+        # Create a new dictionary with only the columns to keep
+        result = {col: element[col] for col in self.columns if col in element}
+        yield result
+
+
+class CleanNaN(beam.DoFn):
+    def process(self, element, *args, **kwargs):
+        import math
+        import decimal
+        # Elemento é um dicionário representando uma linha, com coluna: valor
+        for key, value in element.items():
+            if isinstance(value, str) and value.lower() == 'nan':
+                # Caso 1: Para strings que contêm 'NaN', substitui por uma string vazia
+                element[key] = ''
+            elif isinstance(value, (float, int, decimal.Decimal)) and math.isnan(value):
+                # Caso 2: Para números (incluindo decimal, float, integer), substitui por None
+                element[key] = None
+        yield element
+
+#TODO: Remove DeriveSingleValue method from data cleaning. New method was moved to Data Enrichment with new name ColumnValueAssignment
+class DeriveSingleValue(beam.DoFn):
+    def __init__(self, value, new_column):
+        """
+        Inicializa o DoFn com os parâmetros necessários.
+
+        Parâmetros:
+        - value: O valor único a ser atribuído à nova coluna.
+        - new_column: O nome da nova coluna.
+        """
+        self.value = value
+        self.new_column = new_column
+
+    def process(self, element):
+        # Atribui o valor único à nova coluna
+        element[self.new_column] = self.value
+        yield element
 #################################################################################################################
 # RenameColumns is designed to rename columns in a PCollection's element (expected to be a dictionary). 
 # The renaming is defined by a column_mapping dictionary where keys are original column names, and 
@@ -257,7 +329,38 @@ class ReplaceStartWithFn(beam.DoFn):
         yield element
 
 
-class ExtractDecimalFn(beam.DoFn):
+class ReplacePatterns(beam.DoFn):
+    def __init__(self, columns, pattern, replacement):
+        self.columns = columns
+        self.pattern = pattern
+        self.replacement = replacement
+
+    def process(self, element):
+        import re
+        for column in self.columns:
+            if column in element and re.match(self.pattern, element[column]):
+                element[column] = re.sub(self.pattern, self.replacement, element[column])
+        yield element
+
+
+class DeduplicateFn(beam.DoFn):
+    # this only works if all values in the dictionary are themselves hashable.
+    def __init__(self):
+        self.seen = set()
+
+    def process(self, element):
+        # Convert the element to a hashable type if it's a dictionary
+        if isinstance(element, dict):
+            hashable_element = tuple(sorted(element.items()))
+        else:
+            hashable_element = element
+
+        if hashable_element not in self.seen:
+            self.seen.add(hashable_element)
+            yield element
+
+
+class ExtractDecimalFromString(beam.DoFn):
     """
     A custom Apache Beam transformation to extract decimal values from one or more fields in an element.
 
@@ -265,13 +368,13 @@ class ExtractDecimalFn(beam.DoFn):
         columns: A list of column names to be processed.
     """
 
-    def process(self, element, *columns):
+    def process(self, element, columns):
         """
         Processes an element, extracts decimal values from the specified fields, and replaces them with the extracted values.
 
         Args:
             element: The element to be processed.
-            *columns: Variable arguments containing the names of the columns to be processed.
+            columns: A list Variable arguments containing the names of the columns to be processed.
 
         Yields:
             A new element with the extracted decimal values.
@@ -283,6 +386,8 @@ class ExtractDecimalFn(beam.DoFn):
                 cleaned_value = self.extract_decimal(input_string)
                 if cleaned_value is not None:
                     element[column] = cleaned_value
+                else:
+                    element[column] = Decimal(0.0)  # Assign 0 when cleaned_value is None or empty string
         yield element
 
     def extract_decimal(self, input_string):
@@ -295,11 +400,14 @@ class ExtractDecimalFn(beam.DoFn):
         Returns:
             A Decimal object representing the extracted value, or None if extraction fails.
         """
-
+        if input_string is None or input_string == '':
+            return Decimal(0.0)  # Return 0 if input_string is None or empty string
+        
         # Handle negative values enclosed in parentheses using regex
         cleaned_string = re.sub(r'\((.*?)\)', lambda x: '-' + x.group(1), input_string)
         # Replace all non-numeric characters except commas and minus signs with an empty string
         cleaned_string = re.sub(r'[^\d,-]', '', cleaned_string).replace(',', '.')
+        
         try:
             # Convert the cleaned string to a Decimal without rounding
             return Decimal(cleaned_string)
@@ -338,3 +446,26 @@ class ExtractDecimalFn(beam.DoFn):
     - It extracts decimal values from input strings, including cases where negative values are represented within parentheses.
     - If decimal values are already separeted by dots, please try a simple cast to Decimal Type. 
     """
+
+
+class TrimValues(beam.DoFn):
+    def __init__(self, columns):
+        """
+        Initializes the TrimValues instance.
+
+        Args:
+            columns (list of str): A list of column names to trim spaces from.
+        """
+        self.columns = columns
+
+    def process(self, element):
+        """
+        Processes each element, trimming leading and trailing spaces from specified columns.
+
+        Args:
+            element (dict): The input element to process, where keys are column names.
+        """
+        for column in self.columns:
+            if column in element and isinstance(element[column], str):
+                element[column] = element[column].strip()
+        yield element

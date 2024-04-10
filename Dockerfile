@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y git
 RUN pip install --no-cache-dir \
     git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@main#egg=dojo-beam-transforms
 
+
 # Copy files from the official SDK image, including script/dependencies
 COPY --from=apache/beam_python3.10_sdk:2.48.0 /opt/apache/beam /opt/apache/beam
 

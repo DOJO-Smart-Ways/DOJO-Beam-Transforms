@@ -1,5 +1,6 @@
 import apache_beam as beam
-
+import re
+from decimal import Decimal, InvalidOperation
 
 class ConvertToUpperCase(beam.DoFn):
     """
@@ -166,22 +167,33 @@ class LeftJoinFn(beam.DoFn):
         table1_values = grouped_values['TABLE1']
         table2_values = grouped_values['TABLE2']
 
+        # Determine the full set of columns to include from TABLE2
+        all_columns = self.columns_to_include if self.columns_to_include is not None else None
+
         for table1 in table1_values:
-            table1_value = table1[1]  # Unpack the tuple, assuming the record is the second element
+            table1_value = table1[1]  # Assuming the record is the second element in the tuple
 
             if table2_values:
                 for table2 in table2_values:
                     table2_value = table2[1]
-
-                    # Filter the columns of table2_value if columns_to_include is provided
-                    if self.columns_to_include is not None:
-                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in self.columns_to_include}
+                    if all_columns is not None:
+                        # Include only specified columns from TABLE2
+                        filtered_table2_value = {k: v for k, v in table2_value.items() if k in all_columns}
                     else:
                         filtered_table2_value = table2_value
-
+                        
+                    for k in filtered_table2_value.keys():
+                        if filtered_table2_value[k] is None:
+                            filtered_table2_value[k] = ''
                     yield {**table1_value, **filtered_table2_value}
+
             else:
-                yield table1_value
+                # Ensure the output format is consistent, even for TABLE1 records with no TABLE2 match
+                if all_columns is not None:
+                    no_match_table2_value = {k: '' for k in all_columns}
+                    yield {**table1_value, **no_match_table2_value}
+                else:
+                    yield table1_value
 
 
 class SplitColumnFn(beam.DoFn):
@@ -244,7 +256,7 @@ class MergeColumnsFn(beam.DoFn):
         - The list of column names to be merged.
         - The name of the new column after merging.
         - An optional delimiter to use in the merge, defaulting to an empty string.
-        
+
         :param merge_instructions: List of tuples (list of columns to merge, new column name, delimiter)
         """
         self.merge_instructions = merge_instructions
@@ -254,11 +266,16 @@ class MergeColumnsFn(beam.DoFn):
         Processes each element to merge columns based on the initialized merge instructions.
         """
         for columns_to_merge, new_column_name, delimiter in self.merge_instructions:
-            # Join the specified columns with the provided delimiter
-            merged_value = delimiter.join([element[col] for col in columns_to_merge])
-            element[new_column_name] = merged_value
+            # Check if all columns to merge exist in the element
+            if all(col in element for col in columns_to_merge):
+                # Join the specified columns with the provided delimiter
+                merged_value = delimiter.join([str(element[col]) for col in columns_to_merge])
+                element[new_column_name] = merged_value
+            else:
+                # Optionally, handle the case where not all columns are present
+                # For example, you could set a default value or log a warning
+                element[new_column_name] = 'DEFAULT_VALUE_OR_LOG_WARNING'
         yield element
-
 
 class GenericDeriveCondition(beam.DoFn):
     def __init__(self, column, map, new_column, default='UNKNOWN'):
@@ -331,27 +348,32 @@ class ColumnsToFloatConverter(beam.DoFn):
     def __init__(self, columns_to_float):
         """
         Initializes the ColumnsToFloatConverter instance.
-        
+
         Args:
-            columns_to_float (list of str): A list of column names whose values should be converted to strings.
+            columns_to_float (list of str): A list of column names whose values should be converted to floats.
         """
         self.columns_to_float = columns_to_float
 
     def process(self, element):
         """
-        Processes each element, converting specified column values to float.
-        
+        Processes each element, converting specified column values to float, while handling 'None', empty strings, and 'NaN'.
+
         Args:
             element (dict): The input element to process, where keys are column names.
         """
         for column in self.columns_to_float:
-            if column in element and isinstance(element[column], str):
-                try:
-                  element[column] = round(float(element[column]), 2)
-                except ValueError:
-                  pass
+            # Ensure the column exists in the element
+            if column in element:
+                # Handle None, empty string, and 'NaN' by setting them to None
+                if element[column] is None or element[column] == "" or str(element[column]).lower() == 'nan':
+                    element[column] = None
+                else:
+                    # Attempt to convert to float, otherwise, leave as is
+                    try:
+                        element[column] = float(element[column])
+                    except ValueError:
+                        pass
         yield element
-
 
 
 class ColumnsToIntegerConverter(beam.DoFn):
@@ -700,3 +722,141 @@ class GenericDeriveConditionComplex(beam.DoFn):
             element[self.new_column] = self.default
 
         yield element
+
+
+class ColumnsToDecimalConverter(beam.DoFn):
+    """
+    A custom Apache Beam transformation to extract decimal values from one or more fields in an element.
+
+    Args:
+        columns: A list of column names to be processed.
+    """
+    def __init__(self, columns):
+        self.columns = columns
+
+    def process(self, element):
+        """
+        Processes an element, extracts decimal values from the specified fields, and replaces them with the extracted values.
+
+        Args:
+            element: The element to be processed.
+            columns: A list Variable arguments containing the names of the columns to be processed.
+
+        Yields:
+            A new element with the extracted decimal values.
+        """
+
+        for column in self.columns:
+            if column in element:
+                input_string = element[column]
+                cleaned_value = self.extract_decimal(input_string)
+                if cleaned_value is not None:
+                    element[column] = cleaned_value
+                else:
+                    element[column] = Decimal(0.0)  # Assign 0 when cleaned_value is None or empty string
+        yield element
+
+    def extract_decimal(self, input_string):
+      """
+      Converts an input value to a Decimal object with 5 decimal places.
+
+      Args:
+          input_value: The input value to be converted.
+
+      Returns:
+          A Decimal object representing the input value with 5 decimal places.
+      """
+      if input_string is None or input_string == "" or isinstance(input_string, str):
+          return Decimal(0)  # Return 0 if input_value is None
+
+      try:
+          # Convert the input value to a Decimal with 5 decimal places
+          return Decimal(input_string).quantize(Decimal('0.00000'))
+      except (InvalidOperation, ValueError):
+          # If conversion to Decimal fails, return 0
+          return Decimal(0.0)
+      
+
+class ColumnCopy(beam.DoFn):
+    def __init__(self, copy_column_name, paste_column_name):
+        """
+        Initializes the ColumnCopyDoFn.
+
+        Args:
+            copy_column_name (str): The name of the column to copy from.
+            paste_column_name (str): The name of the column to paste into.
+        """
+        self.copy_column_name = copy_column_name
+        self.paste_column_name = paste_column_name
+
+    def process(self, element):
+        """
+        Copies the value of one column to another column in the given element.
+
+        Args:
+            element (dict): A dictionary representing a row, with column names as keys and values as values.
+
+        Yields:
+            dict: A dictionary representing the modified row after copying the column value.
+        """
+        # Validate input column names
+        if self.copy_column_name not in element:
+            raise ValueError(f"Column '{self.copy_column_name}' not found in the input data.")
+        if self.paste_column_name in element:
+            raise ValueError(f"Column '{self.paste_column_name}' already exists in the input data.")
+
+        # Copy the column value
+        element[self.paste_column_name] = element[self.copy_column_name]
+        
+        yield element
+
+class ColumnValueAssignment(beam.DoFn):
+    def __init__(self, value, new_column):
+        """
+        Initializes the DoFn with the necessary parameters.
+
+        Parameters:
+        - value: The single value to be assigned to the new column.
+        - new_column: The name of the new column.
+        """
+        self.value = value
+        self.new_column = new_column
+
+    def process(self, element):
+        """
+        Assigns the single value to the new column.
+
+        Args:
+        - element (dict): A dictionary representing a row, with column names as keys and values as values.
+
+        Yields:
+        - dict: A dictionary representing the modified row after assigning the single value to the new column.
+        """
+        # Assign the single value to the new column
+        element[self.new_column] = self.value
+        yield element
+
+
+class OrderFieldsBySchema(beam.DoFn):
+    def __init__(self, schema_str):
+        """
+        Initializes the OrderFieldsBySchema with a schema string.
+
+        Args:
+            schema_str (str): A multiline string representing the schema.
+        """
+        # Parse the schema string to extract field names
+        self.schema_fields = [line.split(":")[0].strip() for line in schema_str.strip().split("\n")]
+
+    def process(self, element):
+        """
+        Orders the fields of the element according to the schema, maintaining a dictionary format.
+
+        Args:
+            element: A dictionary representing a single record.
+
+        Yields:
+            A dictionary with keys ordered according to the schema.
+        """
+        ordered_dict = {field: element.get(field, None) for field in self.schema_fields}
+        yield ordered_dict
