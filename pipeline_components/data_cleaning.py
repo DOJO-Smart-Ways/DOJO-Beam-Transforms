@@ -468,4 +468,3 @@ class TrimValues(beam.DoFn):
         for column in self.columns:
             if column in element and isinstance(element[column], str):
                 element[column] = element[column].strip()
-        yield element
