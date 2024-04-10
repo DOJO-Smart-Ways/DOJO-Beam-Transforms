@@ -108,3 +108,35 @@ class ExtractUniqueValuesFn(beam.DoFn):
             self.seen.add(value)  # Mark the value as seen
             yield value  # Yield the unique value
 
+
+class ExtractColumnValuesFn(beam.DoFn):
+    def __init__(self, column_name):
+        self.column_name = column_name
+
+    def process(self, element):
+        # Yield the value if the column_name key exists; otherwise, yield a special value
+        yield element.get(self.column_name, None)
+
+def extract_and_get_distinct_values(p_collection, column_name):
+    """
+    Extracts values from a specified column in a PCollection and finds distinct values.
+
+    Args:
+        p_collection: The input PCollection.
+        column_name: The name of the column to extract values from.
+
+    Returns:
+        A PCollection containing distinct values from the specified column.
+
+    E.g.
+        distinct_cost_centre = extract_and_get_distinct_values(pipeline, business_employee, 'COST_CENTRE')
+        distinct_cost_centre | beam.Map(print)
+    """
+    # Define the Beam pipeline steps for extracting distinct values
+    distinct_values = (
+        p_collection
+        | f"ExtractColumnValues: {column_name}" >> beam.ParDo(ExtractColumnValuesFn(column_name))
+        | f"FilterNoneValues: {column_name}" >> beam.Filter(lambda x: x is not None)
+        | f"DistinctValues: {column_name}" >> beam.Distinct()
+    )
+    return distinct_values
