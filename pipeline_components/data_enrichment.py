@@ -1,6 +1,7 @@
 import apache_beam as beam
-import re
 from decimal import Decimal, InvalidOperation
+import pypinyin as ppi
+
 
 class ConvertToUpperCase(beam.DoFn):
     """
@@ -860,3 +861,16 @@ class OrderFieldsBySchema(beam.DoFn):
         """
         ordered_dict = {field: element.get(field, None) for field in self.schema_fields}
         yield ordered_dict
+
+
+class ChineseToPinyinDoFn(beam.DoFn):
+    def process(self, element):
+        pinyin_element = {}
+        for key, value in element.items():
+            if isinstance(value, str):  # Assume all values are strings to be converted
+                pinyin_list = ppi.pinyin(value, style=ppi.Style.TONE3)
+                pinyin_text = ' '.join([item[0] for item in pinyin_list])
+                pinyin_element[key] = pinyin_text
+            else:
+                pinyin_element[key] = value  # Copy other types of values as-is
+        return [pinyin_element]
