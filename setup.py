@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='dojo-beam-transforms',
-    version='0.1',
+    version='0.2',
     packages=find_packages(),
     install_requires=[
         'apache-beam[dataframe,gcp,interactive]==2.54.0',
@@ -13,5 +13,6 @@ setup(
         'pandas-datareader==0.10.0',
         'pandas-gbq==0.17.9',
         'PyMuPDF==1.23.22',
+        'pypinyin==0.51.0'
     ],
 )
