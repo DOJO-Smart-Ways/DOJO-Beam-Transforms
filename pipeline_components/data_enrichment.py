@@ -1,7 +1,5 @@
 import apache_beam as beam
 from decimal import Decimal, InvalidOperation
-import pypinyin as ppi
-
 
 class ConvertToUpperCase(beam.DoFn):
     """
@@ -865,6 +863,7 @@ class OrderFieldsBySchema(beam.DoFn):
 
 class ChineseToPinyinDoFn(beam.DoFn):
     def process(self, element):
+        import pypinyin as ppi
         pinyin_element = {}
         for key, value in element.items():
             if isinstance(value, str):  # Assume all values are strings to be converted
