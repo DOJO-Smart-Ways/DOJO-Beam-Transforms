@@ -199,7 +199,7 @@ class SplitColumnFn(beam.DoFn):
         delimiter (str): The delimiter to use for splitting the column's value (default: '/').
     """
     
-    def __init__(self, column_to_split, new_columns, delimiter='/'):
+    def __init__(self, column_to_split, new_columns, delimiter=',', limit_splits=None):
         """
         Initializes the SplitColumnFn with the column to split, the names of the new columns, and the delimiter.
         
@@ -211,6 +211,7 @@ class SplitColumnFn(beam.DoFn):
         self.column_to_split = column_to_split
         self.new_columns = new_columns
         self.delimiter = delimiter
+        self.limit_splits = limit_splits
 
     def process(self, element):
         """
@@ -226,8 +227,11 @@ class SplitColumnFn(beam.DoFn):
         Yields:
             The modified element with new columns added for the split parts of the original column's value.
         """
-        # Split the specified column's value using the provided delimiter.
-        parts = element.get(self.column_to_split, '').split(self.delimiter)
+        
+        if self.limit_splits is None:
+          parts = element.get(self.column_to_split, '').split(self.delimiter)
+        else:
+          parts = element.get(self.column_to_split, '').split(self.delimiter, self.limit_splits)
 
         # Assigning split parts to new columns, defaulting to None if the part is not available.
         for i, new_column in enumerate(self.new_columns):
@@ -697,6 +701,9 @@ class GenericDeriveConditionComplex(beam.DoFn):
                 break
         else:
             # If no condition matched, assign the default value
-            element[self.new_column] = self.default
+            if callable(self.default):
+                element[self.new_column] = self.default(element)
+            else:
+                element[self.new_column] = self.default
 
         yield element
