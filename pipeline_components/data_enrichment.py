@@ -863,11 +863,11 @@ class OrderFieldsBySchema(beam.DoFn):
 
 class ChineseToPinyinDoFn(beam.DoFn):
     def process(self, element):
-        import pypinyin as ppi
+        from pypinyin import pinyin, Style
         pinyin_element = {}
         for key, value in element.items():
             if isinstance(value, str):  # Assume all values are strings to be converted
-                pinyin_list = ppi.pinyin(value, style=ppi.Style.TONE3)
+                pinyin_list = pinyin(value, style=Style.TONE3)
                 pinyin_text = ' '.join([item[0] for item in pinyin_list])
                 pinyin_element[key] = pinyin_text
             else:
