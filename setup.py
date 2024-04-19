@@ -13,6 +13,7 @@ setup(
         'pandas-datareader==0.10.0',
         'pandas-gbq==0.17.9',
         'PyMuPDF==1.23.22',
-        'pypinyin==0.51.0'
+        'pypinyin==0.51.0',
+        'unidecode==1.3.8'
     ],
 )
