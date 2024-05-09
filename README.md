@@ -53,6 +53,37 @@ By following this integrated approach, you maintain a clean and organized develo
    from pipeline_components.input_file import read_pdf, read_and_apply_headers, read_bq
    from pipeline_components import data_enrichment as de
    from pipeline_components import data_cleaning as dc
+   
+   def process_delivery_requests(temp_location, output_table):
+   
+   # Reading the initial data
+   delivery_requests, invalid_delivery_requests = read_json(pipeline, 'bucket/location/file.json, identifier='')
+   
+   # Cleaning the data
+   cleaned_data = (delivery_requests
+      | 'Keep Only BR Currency' >> beam.ParDo(dc.KeepColumnValues('Currency', 'R$'))
+      | 'Replace , to .  on Coordinates' >> beam.ParDo(dc.ReplacePatterns(), ['Longitude', 'Latitude'], ',', '.'))
+   
+   # Enriching the data
+   enriched_data = (cleaned_data
+      | 'Convert to String' >> beam.ParDo(de.ColumnsToStringConverter(), ['destination', 'origin']))
+   
+   # Writing the final output to BigQuery
+   enriched_data | 'Write to BigQuery' >> beam.io.WriteToBigQuery(
+      table=output_table,
+      schema='SCHEMA_AUTODETECT',
+      create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+      write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
+      custom_gcs_temp_location=temp_location
+   )
+   
+   # Run the pipeline
+   pipeline.run().wait_until_finish()
+   
+   if __name__ == '__main__':
+      temp_location = 'path/to/temp/location'
+      output_table = 'project-id:dataset.table'
+      process_delivery_requests(temp_location, output_table)
    ```
 
 ## Pipeline Deployment with Docker image
