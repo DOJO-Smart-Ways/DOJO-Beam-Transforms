@@ -50,7 +50,7 @@ By following this integrated approach, you maintain a clean and organized develo
 
    Bring the power of `DOJO-Beam-Transforms` into your pipeline with ease:
    ```python
-   from pipeline_components.input_file import read_pdf, read_and_apply_headers, read_bq
+   from pipeline_components.input_file import read_json
    from pipeline_components import data_enrichment as de
    from pipeline_components import data_cleaning as dc
    
