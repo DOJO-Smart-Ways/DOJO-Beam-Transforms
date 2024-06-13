@@ -1,8 +1,5 @@
-def a():
-    print(" Method a")
-
-def b():
-    print("Method  b")
-
-def c():
-    print("Method  c")
+def make_gcs_path(*args: str) -> str:
+    if args:
+        return "gs://" + "/".join(args)
+    else:
+        return ""
