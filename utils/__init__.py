@@ -1,5 +1,5 @@
 # utils/__init__.py
-from gcp_utils import *
+from .gcp_utils import *
 
 import inspect, sys
 
