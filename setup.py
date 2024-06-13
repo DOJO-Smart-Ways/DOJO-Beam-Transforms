@@ -6,12 +6,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'apache-beam[dataframe,gcp,interactive]==2.54.0',
-        'fsspec==2023.5.0',
-        'gcsfs==2023.5.0',
-        'openpyxl==3.0.10',
-        'pandas==1.5.3',
+        'pandas==2.0.3',
         'pandas-datareader==0.10.0',
-        'pandas-gbq==0.17.9',
         'PyMuPDF==1.23.22',
         'pypinyin==0.51.0',
         'unidecode==1.3.8'
