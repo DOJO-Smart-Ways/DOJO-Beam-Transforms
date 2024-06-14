@@ -27,17 +27,6 @@ def test_build_gcs_path_no_arguments():
         build_gcs_path()
 
 
-# Section: Tests for build_gcs_path function
-@pytest.mark.build_gcs_path
-def test_build_gcs_path_assert_false():
-    """
-    Test build_gcs_path with valid arguments.
-
-    Ensures that the function correctly constructs a GCS path
-    when provided with valid arguments.
-    """
-    assert False
-
 # Section: Tests for build_bq_schema function
 
 @pytest.mark.build_bq_schema
