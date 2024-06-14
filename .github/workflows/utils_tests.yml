@@ -4,7 +4,8 @@ name: Utils Unit-Testing Python package
 on: [push, pull_request]
 
 jobs:
-  build:
+  test:
+    name: Utils Unit-Testing (Python ${{ matrix.python-version }})
 
     runs-on: ubuntu-20.04
 
