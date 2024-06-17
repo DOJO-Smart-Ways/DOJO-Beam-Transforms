@@ -86,9 +86,11 @@ def test_build_bq_schema_invalid_data_type():
     valid_types = {
         "ARRAY", "BOOL", "BYTES", "DATE", "DATETIME", "GEOGRAPHY", "INTERVAL", "JSON",
         "INT64", "INT", "SMALLINT", "INTEGER", "BIGINT", "TINYINT", "BYTEINT", "NUMERIC",
-        "DECIMAL", "BIGNUMERIC", "BIGDECIMAL", "FLOAT64", "RANGE", "STRING", "STRUCT",
+        "DECIMAL", "BIGNUMERIC", "BIGDECIMAL", "FLOAT64", "FLOAT", "RANGE", "STRING", "STRUCT",
         "TIME", "TIMESTAMP"
     }
+
+    column_name = "test_column"
     invalid_type = "INVALID_TYPE"
-    with pytest.raises(ValueError, match=f"Invalid data type '{invalid_type}'. Supported types are: {', '.join(sorted(valid_types))}"):
-        build_bq_schema([("name", "STRING"), ("age", invalid_type)])
+    with pytest.raises(ValueError, match=f"Invalid data type '{invalid_type}' in column '{column_name}'. Supported types are: {', '.join(sorted(valid_types))}"):
+        build_bq_schema([("name", "STRING"), (column_name, invalid_type)])
