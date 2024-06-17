@@ -70,7 +70,7 @@ def build_bq_schema(column_tuples: List[Tuple[str, str]]) -> Dict[str, List[Dict
     valid_types = {
         "ARRAY", "BOOL", "BYTES", "DATE", "DATETIME", "GEOGRAPHY", "INTERVAL", "JSON",
         "INT64", "INT", "SMALLINT", "INTEGER", "BIGINT", "TINYINT", "BYTEINT", "NUMERIC",
-        "DECIMAL", "BIGNUMERIC", "BIGDECIMAL", "FLOAT64", "RANGE", "STRING", "STRUCT",
+        "DECIMAL", "BIGNUMERIC", "BIGDECIMAL", "FLOAT64", "FLOAT","RANGE", "STRING", "STRUCT",
         "TIME", "TIMESTAMP"
     }
     
@@ -82,7 +82,7 @@ def build_bq_schema(column_tuples: List[Tuple[str, str]]) -> Dict[str, List[Dict
         if not isinstance(name, str) or not isinstance(data_type, str):
             raise ValueError("Each tuple must contain a column name and data type as strings.")
         if data_type.upper() not in valid_types:
-            raise ValueError(f"Invalid data type '{data_type}'. Supported types are: {', '.join(sorted(valid_types))}")
+            raise ValueError(f"Invalid data type '{data_type}' in column '{name}'. Supported types are: {', '.join(sorted(valid_types))}")
         schema['fields'].append({'name': name, 'type': data_type.upper()})
     
     return schema
