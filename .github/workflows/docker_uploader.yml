@@ -1,0 +1,46 @@
+name: Build and Push Docker image to Artifact Registry
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-push-artifact:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [dev, prod]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          echo "PROJECT_ID=${{ secrets[matrix.env].PROJECT_ID }}" >> $GITHUB_ENV
+          echo "REGION=${{ secrets[matrix.env].REGION }}" >> $GITHUB_ENV
+          echo "GAR_LOCATION=${{ secrets[matrix.env].REGION }}-docker.pkg.dev/${{ secrets[matrix.env].PROJECT_ID }}/dojo-beam/" >> $GITHUB_ENV
+          echo "ARTIFACT_REGISTRY_KEY=${{ secrets[matrix.env].ARTIFACT_REGISTRY_KEY }}" >> $GITHUB_ENV
+
+      - name: Auth GCP Project
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets[matrix.env].ARTIFACT_REGISTRY_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Use gcloud CLI
+        run: gcloud info
+
+      - name: Docker auth
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build image
+        run: docker build . --file DOCKERFILE_LOCATION --tag ${{ env.GAR_LOCATION }}
+        working-directory: WORKING_DIRECTORY
+
+      - name: Push image
+        run: docker push ${{ env.GAR_LOCATION }}
