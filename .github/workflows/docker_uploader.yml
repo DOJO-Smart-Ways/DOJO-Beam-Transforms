@@ -21,13 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 'Echo inputs env'
-        run: |
-          echo ${{ inputs.environment }}
-          echo ${{ secrets.ARTIFACT_REGISTRY_KEY }}
-          echo Prod id ${{ secrets.PROJECT_ID }}
-
-
       - name: Auth GCP Project
         uses: google-github-actions/auth@v2
         with:
