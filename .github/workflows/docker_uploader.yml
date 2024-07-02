@@ -12,22 +12,28 @@ jobs:
     strategy:
       matrix:
         env: [dev, prod]
+        include:
+        # includes a new variable for each env 
+        - env: dev
+          PROJECT_ID: PROJECT_ID
+          REGION: REGION
+          ARTIFACT_REGISTRY_KEY: ARTIFACT_REGISTRY_KEY
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set environment variables
         run: |
-          echo "PROJECT_ID=${{ secrets[matrix.env].PROJECT_ID }}" >> $GITHUB_ENV
-          echo "REGION=${{ secrets[matrix.env].REGION }}" >> $GITHUB_ENV
-          echo "GAR_LOCATION=${{ secrets[matrix.env].REGION }}-docker.pkg.dev/${{ secrets[matrix.env].PROJECT_ID }}/dojo-beam/" >> $GITHUB_ENV
-          echo "ARTIFACT_REGISTRY_KEY=${{ secrets[matrix.env].ARTIFACT_REGISTRY_KEY }}" >> $GITHUB_ENV
+          echo "PROJECT_ID=${{ env.PROJECT_ID }}" >> $GITHUB_ENV
+          echo "REGION=${{ env.REGION }}" >> $GITHUB_ENV
+          echo "GAR_LOCATION=${{ env.REGION }}-docker.pkg.dev/${{ secrets[matrix.env].PROJECT_ID }}/dojo-beam/" >> $GITHUB_ENV
+          echo "ARTIFACT_REGISTRY_KEY=${{ secrets[matrix.env.ARTIFACT_REGISTRY_KEY] }}" >> $GITHUB_ENV
 
       - name: Auth GCP Project
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ env.ARTIFACT_REGISTRY_KEY }}'
-          
+
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
 
