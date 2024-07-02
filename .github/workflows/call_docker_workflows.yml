@@ -10,7 +10,11 @@ jobs:
   ReuseableMatrixJobForDeployment:
     strategy:
       matrix:
-        environment: [dev]
-    uses: ./.github/workflows/docker_uploader.yml
-    with:
-      environment: ${{ matrix.environment }}
+        env: [dev]
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.env }}
+
+    steps:
+    - uses: ./.github/workflows/docker_uploader.yml
+      with:
+        secrets: inherit

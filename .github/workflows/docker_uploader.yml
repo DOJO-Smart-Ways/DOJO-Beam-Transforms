@@ -2,21 +2,23 @@ name: Build and Push Docker image to Artifact Registry
 
 on:
   workflow_call:
-    inputs:
-      environment:
+    secrets:
+      ARTIFACT_REGISTRY_KEY:
         required: true
-        type: string
+      PROJECT_ID:
+        required: true
+      REGION:
+        required: true
 
 jobs:
   build-push-artifact:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+
     steps:
       - uses: actions/checkout@v4
 
       - name: 'Echo inputs env'
         run: |
-          echo ${{ inputs.environment }}
           echo ${{ secrets.ARTIFACT_REGISTRY_KEY }}
           echo Prod id ${{ secrets.PROJECT_ID }}
 
