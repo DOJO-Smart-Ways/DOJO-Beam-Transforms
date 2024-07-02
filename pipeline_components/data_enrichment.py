@@ -397,7 +397,7 @@ class ColumnsToIntegerConverter(beam.DoFn):
             element (dict): The input element to process, where keys are column names.
         """
         for column in self.columns_to_integer:
-            if column in element and isinstance(element[column], (str, float)):
+            if column in element and isinstance(element[column], (str, float, Decimal)):
                 try:
                   if element[column] == "":
                     element[column] = 0
