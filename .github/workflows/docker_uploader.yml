@@ -14,6 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 'Echo inputs env'
+        run: |
+          echo ${{ inputs.environment }}
+          echo ${{ secrets.ARTIFACT_REGISTRY_KEY }}
+
       - name: Auth GCP Project
         uses: google-github-actions/auth@v2
         with:
