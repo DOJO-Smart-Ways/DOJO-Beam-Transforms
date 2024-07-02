@@ -11,6 +11,6 @@ jobs:
     strategy:
       matrix:
         environment: [dev]
-    uses: ./.github/workflows/docker_uploader.yml@feature/build_docker_workflow
+    uses: ./.github/workflows/docker_uploader.yml
     with:
       environment: ${{ matrix.environment }}
