@@ -1,0 +1,20 @@
+name: Call Docker Uploader Dev
+
+on:
+  push:
+    branches: ["feature/build_docker_workflow"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-push-artifact:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev]
+
+    steps:
+      - name: Run reusable workflow for ${{ matrix.environment }} environment
+        uses: ./.github/workflows/docker_uploader.yml
+        with:
+          environment: ${{ matrix.environment }}
