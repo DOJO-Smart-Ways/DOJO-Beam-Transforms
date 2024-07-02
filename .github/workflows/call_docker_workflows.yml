@@ -8,13 +8,9 @@ on:
 
 jobs:
   ReuseableMatrixJobForDeployment:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         environment: [dev]
-
-    steps:
-      - name: Run reusable workflow for ${{ matrix.environment }} environment
-        uses: ./.github/workflows/docker_uploader.yml@feature/build_docker_workflow
-        with:
-          environment: ${{ matrix.environment }}
+    uses: ./.github/workflows/docker_uploader.yml@feature/build_docker_workflow
+    with:
+      environment: ${{ matrix.environment }}
