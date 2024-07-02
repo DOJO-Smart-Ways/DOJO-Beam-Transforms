@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
-  build-push-artifact:
+  ReuseableMatrixJobForDeployment:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -15,6 +15,6 @@ jobs:
 
     steps:
       - name: Run reusable workflow for ${{ matrix.environment }} environment
-        uses: ./.github/workflows/docker_uploader.yml
+        uses: ./.github/workflows/docker_uploader.yml@feature/build_docker_workflow
         with:
           environment: ${{ matrix.environment }}
