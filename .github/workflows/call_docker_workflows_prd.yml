@@ -1,13 +1,13 @@
-name: Call Docker Uploader Dev
+name: Call Docker Uploader Development prod
 
 on:
-  push:
-    branches: ["feature/build_docker_workflow"]
   pull_request:
     branches: ["main"]
+    types: [closed]
 
 jobs:
   ReuseableMatrixJobForDeployment:
+    if: github.event.pull_request.merged == true
     strategy:
       matrix:
         environment: [dev]
