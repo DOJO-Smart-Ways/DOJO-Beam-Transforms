@@ -10,6 +10,7 @@ setup(
         'pandas-datareader==0.10.0',
         'PyMuPDF==1.23.22',
         'pypinyin==0.51.0',
-        'unidecode==1.3.8'
+        'unidecode==1.3.8',
+        'openpyxl==3.0.10'
     ],
 )
