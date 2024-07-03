@@ -12,6 +12,7 @@ setup(
         'pypinyin==0.51.0',
         'unidecode==1.3.8',
         'openpyxl==3.0.10',
-        'fsspec==2024.6.1'
+        'fsspec==2024.6.1',
+        'gcsfs==2024.6.1'
     ],
 )
