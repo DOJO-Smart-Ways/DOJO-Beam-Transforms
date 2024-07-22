@@ -1,0 +1,16 @@
+name: Call Docker Uploader Development envs
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  ReuseableMatrixJobForDeployment:
+    strategy:
+      matrix:
+        environment: [dev]
+    uses: ./.github/workflows/docker_uploader.yml
+    with:
+      environment: ${{ matrix.environment }}
+    secrets: inherit
+    

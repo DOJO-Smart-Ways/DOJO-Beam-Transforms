@@ -1,0 +1,18 @@
+name: Call Docker Uploader Development prod
+
+on:
+  pull_request:
+    branches: ["main"]
+    types: [closed]
+
+jobs:
+  ReuseableMatrixJobForDeployment:
+    if: github.event.pull_request.merged == true
+    strategy:
+      matrix:
+        environment: [us-multi, emea-multi, ga]
+    uses: ./.github/workflows/docker_uploader.yml
+    with:
+      environment: ${{ matrix.environment }}
+    secrets: inherit
+    
