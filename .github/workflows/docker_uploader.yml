@@ -22,13 +22,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Extract version from setup.py
-        id: get_version
+        id: package_infos
         run: |
           VERSION=$(python setup.py --version)
-          echo "::set-output name=VERSION::${VERSION}"
+          echo "version=$(echo $VERSION)" >> $GITHUB_OUTPUT
 
       - name: Print extracted version (for debugging)
-        run: echo "Extracted version is ${{ steps.get_version.outputs.VERSION }}"
+        run: echo "Extracted version is ${{ steps.package_infos.outputs.VERSION }}"
 
       - name: Auth GCP Project
         uses: google-github-actions/auth@v2
