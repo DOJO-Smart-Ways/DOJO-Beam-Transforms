@@ -46,11 +46,11 @@ jobs:
           gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
 
       - name: Build image
-        run: docker build --file Dockerfile --tag dojo_beam .
+        run: docker build --file Dockerfile --tag dojo_beam:${{ steps.package_infos.outputs.version }} .
         working-directory: .
 
       - name: Tag image
-        run: docker tag dojo_beam ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/dojo-beam/dojo_beam
+        run: docker tag dojo_beam:${{ steps.package_infos.outputs.version }} ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/dojo-beam/dojo_beam:${{ steps.package_infos.outputs.version }}
 
       - name: Push image
-        run: docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/dojo-beam/dojo_beam
+        run: docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/dojo-beam/dojo_beam:${{ steps.package_infos.outputs.version }}
