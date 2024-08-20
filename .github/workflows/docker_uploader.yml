@@ -25,7 +25,10 @@ jobs:
         id: get_version
         run: |
           VERSION=$(python setup.py --version)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "::set-output name=VERSION::${VERSION}"
+
+      - name: Print extracted version (for debugging)
+        run: echo "Extracted version is ${{ steps.get_version.outputs.VERSION }}"
 
       - name: Auth GCP Project
         uses: google-github-actions/auth@v2
