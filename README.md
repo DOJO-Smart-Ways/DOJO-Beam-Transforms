@@ -2,6 +2,16 @@
 
 Welcome to `DOJO-Beam-Transforms`, a repository dedicated to sharing advanced Apache Beam transformations, custom `DoFn` classes, and best practices for scalable data processing, curated by the team at DOJO-Smart-Ways.
 
+
+## Table of Contents
+
+1. [DOJO-Beam-Transforms](#dojo-beam-transforms)
+2. [About DOJO-Smart-Ways](#about-dojo-smart-ways)
+3. [What You'll Find Here](#what-youll-find-here)
+4. [Dependency Versions for Release 1.0.0](#dependency-versions-for-release-100)
+5. [Quick Start Guide](#quick-start-guide)
+6. [Pipeline Deployment with Docker image](#pipeline-deployment-with-docker-image)
+
 ## About DOJO-Smart-Ways
 
 DOJO-Smart-Ways is committed to advancing data engineering, providing solutions that enhance data processing capabilities, and sharing knowledge within the data engineering community. Our focus is on creating efficient, scalable solutions for real-world data challenges.
@@ -14,6 +24,37 @@ This repository contains:
 - **Data Processing Recipes**: Step-by-step guides for common and advanced data processing scenarios.
 - **Integration Examples**: How to integrate Apache Beam pipelines with BigQuery and other cloud services for end-to-end data processing solutions.
 - **Performance Optimization Tips**: Best practices for optimizing your Apache Beam pipelines for performance and cost.
+
+
+## Dependency Versions for Release 1.0.0
+
+The following is a list of the dependencies and their respective versions that are required and compatible with the `dojo-beam-transforms` package version 1.0.0:
+
+### Apache Beam SDK Version
+
+- `apache-beam[dataframe,gcp,interactive] == 2.58.1`
+
+### Other Dependencies
+
+- `pandas == 2.0.3`
+- `pandas-datareader == 0.10.0`
+- `PyMuPDF == 1.23.22`
+- `pypinyin == 0.51.0`
+- `unidecode == 1.3.8`
+- `openpyxl == 3.0.10`
+- `fsspec == 2024.6.1`
+- `gcsfs == 2024.6.1`
+
+### Compatible Python Versions
+
+The following Python versions have been tested and are confirmed to be compatible with this release:
+
+- Python 3.8
+- Python 3.9
+- Python 3.10
+
+Please ensure that your environment meets these requirements for optimal performance and compatibility.
+
 
 ## Quick Start Guide
 
@@ -60,13 +101,17 @@ By following this integrated approach, you maintain a clean and organized develo
    delivery_requests, invalid_delivery_requests = read_json(pipeline, 'bucket/location/file.json, identifier='')
    
    # Cleaning the data
-   cleaned_data = (delivery_requests
-      | 'Keep Only BR Currency' >> beam.ParDo(dc.KeepColumnValues('Currency', 'R$'))
-      | 'Replace , to .  on Coordinates' >> beam.ParDo(dc.ReplacePatterns(), ['Longitude', 'Latitude'], ',', '.'))
+   cleaned_data = (
+      delivery_requests
+      | 'Keep Only BR Currency' >> beam.ParDo(dc.KeepColumnValues('Currency', ['R$', '$']))
+      | 'Replace , to .  on Coordinates' >> beam.ParDo(dc.ReplacePatterns(['Longitude', 'Latitude'], ',', '.'))
+   )
    
    # Enriching the data
-   enriched_data = (cleaned_data
-      | 'Convert to String' >> beam.ParDo(de.ColumnsToStringConverter(), ['destination', 'origin']))
+   enriched_data = (
+      cleaned_data
+      | 'Convert to String' >> beam.ParDo(de.ColumnsToStringConverter(), ['destination', 'origin'])
+   )
    
    # Writing the final output to BigQuery
    enriched_data | 'Write to BigQuery' >> beam.io.WriteToBigQuery(
@@ -86,31 +131,43 @@ By following this integrated approach, you maintain a clean and organized develo
       process_delivery_requests(temp_location, output_table)
    ```
 
-## Pipeline Deployment with Docker image
+## Pipeline Deployment with Docker Image
 
-## Prerequisites
+### Benefits of Saving a Docker Image
+
+Saving your Docker image provides several advantages, including consistency across environments, ease of deployment, and faster start-up times. By saving the image, you ensure that the exact environment used in development is replicated in production, reducing the chances of discrepancies or bugs. Additionally, storing Docker images allows for easy rollbacks to previous versions if needed, and simplifies the process of scaling deployments across multiple instances.
+
+### Storage Options
+
+In the example below, the Docker image is stored in **[Google Cloud's Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)**, a managed service that allows you to securely store and manage your container images. While the Artifact Registry is a convenient option, especially for projects already using Google Cloud, Docker images can also be stored in other commonly used registries, including:
+
+- **Docker Hub**: A popular and widely used registry for storing public and private images.
+- **Amazon Elastic Container Registry (ECR)**: A service provided by AWS for managing Docker containers within the AWS ecosystem.
+- **Azure Container Registry (ACR)**: A managed Docker container registry service provided by Microsoft Azure.
+
+### Prerequisites
 
 - **Docker installed on your machine.**
-- **Google Cloud SDK installed..**
+- **Google Cloud SDK installed.**
 
 1. **Clone the Dockerfile**
 
 2. **Build the Docker Image**
-   Inside the folder where Dockerfile is located run: `docker build -t image_name .`
+   Inside the folder where Dockerfile is located run: `docker build -t [IMAGE_NAME] .`
 
 3. **Authenticate with Google Cloud**
    Configure Docker to authenticate requests for Artifact Registry using the following command: `gcloud auth configure-docker [REGION]-docker.pkg.dev`
 
 5. **Tag your Docker image**
-   Use the following command: `docker tag image_name [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/image_name`
+   Use the following command: `docker tag [IMAGE_NAME]:[VERSION] [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/[IMAGE_NAME]`
 
 6. **Push the Docker image to Artifact Registry**
-   Use the following command: `docker push [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/image_name`
+   Use the following command: `docker push [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/[IMAGE_NAME]`
 
 7. **Run the Dataflow Pipeline with Custom Container**
   Add these two parameters to yout pipeline options
       pipeline_options = {
-       'sdk_container_image': 'us-central1-docker.pkg.dev/nidec-ga/dojo-beam/dojo_beam',
+       'sdk_container_image': '[REGION]-docker.pkg.dev/[PROJECT_ID]/dojo-beam/[IMAGE_NAME]',
        'sdk_location': 'container'}
 
 **Embark on your data processing journey with `DOJO-Beam-Transforms` today!**
