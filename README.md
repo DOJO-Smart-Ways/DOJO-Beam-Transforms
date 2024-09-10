@@ -49,9 +49,8 @@ The following is a list of the dependencies and their respective versions that a
 
 The following Python versions have been tested and are confirmed to be compatible with this release:
 
-- Python 3.8
-- Python 3.9
 - Python 3.10
+- Python 3.11
 
 Please ensure that your environment meets these requirements for optimal performance and compatibility.
 
