@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='dojo-beam-transforms',
-    version='1.1.0',
+    version='1.0.1',
     packages=find_packages(),
     install_requires=[
         'apache-beam[dataframe,gcp,interactive]==2.58.1',
@@ -13,6 +13,7 @@ setup(
         'unidecode==1.3.8',
         'openpyxl==3.0.10',
         'fsspec==2024.6.1',
-        'gcsfs==2024.6.1'
+        'gcsfs==2024.6.1',
+        'google-cloud-secret-manager==2.22.0'
     ],
 )
