@@ -75,7 +75,7 @@ Please ensure that your environment meets these requirements for optimal perform
    Once your project-specific development is underway, you can seamlessly integrate these changes into your Jupyter notebook environment. Execute the command below to install the project branch directly:
 
    ```bash
-   !pip install git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@project_name#egg=dojo-beam-transforms
+   !pip install dojo-beam-transforms
    ```
 
    This method allows for continuous development and testing within your project's scope, enabling a more efficient workflow.
