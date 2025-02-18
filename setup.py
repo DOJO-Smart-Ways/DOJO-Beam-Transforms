@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='dojo-beam-transforms',
-    version='1.0.1',
+    version='2.0.0',
     packages=find_packages(),
     install_requires=[
         'apache-beam[dataframe,gcp,interactive]==2.58.1',
