@@ -23,28 +23,29 @@ class HandleNaNValues(beam.DoFn):
 
         columns_to_process = self.columns if self.columns else element.keys()
 
-        if self.strategy == 'replace':
+        if self.strategy == 'remove':
+            # Remove rows with any NaN values in the specified columns
             for key in columns_to_process:
                 value = element.get(key)
-                if isinstance(value, list):
-                    # Replace NaN in lists
-                    element[key] = [self.default_value if isinstance(item, float) and math.isnan(item) else item for item in value]
-                elif isinstance(value, str) and value.lower() == 'nan':
-                    # Replace 'NaN' strings with the default value
-                    element[key] = self.default_value
-                elif isinstance(value, (float, int, decimal.Decimal)) and math.isnan(value):
-                    # Replace numeric NaN values with the default value
-                    element[key] = self.default_value
+                if (
+                    (isinstance(value, (float, int, decimal.Decimal)) and math.isnan(value)) or
+                    (isinstance(value, str) and value.lower() == 'nan')
+                ):
+                    # Skip this element if any column contains NaN
+                    return
+            # Yield the element if no NaN values are found
+            yield element
 
-        elif self.strategy == 'remove':
-            # Remove rows with any NaN values in the specified columns
-            if any(isinstance(element.get(key), (float, int, decimal.Decimal)) and math.isnan(element.get(key)) for key in columns_to_process):
-                return
-            if any(isinstance(element.get(key), str) and element.get(key).lower() == 'nan' for key in columns_to_process):
-                return
+        elif self.strategy == 'replace':
+            # Replace NaN values with the default value
+            for key in columns_to_process:
+                value = element.get(key)
+                if (
+                    (isinstance(value, (float, int, decimal.Decimal)) and math.isnan(value)) or
+                    (isinstance(value, str) and value.lower() == 'nan')
+                ):
+                    element[key] = self.default_value
             yield element
 
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
-
-        yield element

@@ -5,7 +5,7 @@ class KeepColumns(beam.DoFn):
     A DoFn for keeping specified columns from each element in a PCollection.
 
     This function is useful in scenarios where certain columns of data are needed
-    for further processing or analysis, allowing for the reduction of data volume e simplificação da estrutura de dados.
+    for further processing or analysis, allowing for the reduction of data volume.
 
     Attributes:
         columns (list of str): A list containing the names of the columns to be kept.

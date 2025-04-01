@@ -1,0 +1,14 @@
+{
+    "name": "My Dev Container",
+    "build": {
+      "dockerfile": "../Dockerfile"
+    },
+    "settings": {
+      "terminal.integrated.defaultProfile.linux": "bash"
+    },
+    "extensions": [
+      "ms-python.python",
+      "ms-azuretools.vscode-docker"
+    ]
+  }
+  
