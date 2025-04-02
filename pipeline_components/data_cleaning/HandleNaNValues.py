@@ -13,8 +13,18 @@ class HandleNaNValues(beam.DoFn):
         columns (list of str, optional): The list of columns to apply the strategy. If None, applies to all columns.
     """
     def __init__(self, strategy='replace', default_value=None, columns=None):
+        # Validate strategy
+        if strategy not in ['replace', 'remove']:
+            raise ValueError(f"Invalid strategy '{strategy}'. Supported strategies are 'replace' or 'remove'.")
         self.strategy = strategy
         self.default_value = default_value
+
+        # Validate columns
+        if columns is not None:
+            if not isinstance(columns, list):
+                raise TypeError(f"Columns must be a list, but got {type(columns).__name__}.")
+            if not all(isinstance(col, str) for col in columns):
+                raise ValueError("All columns must be strings.")
         self.columns = columns
 
     def process(self, element):

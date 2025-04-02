@@ -2,12 +2,6 @@ import pytest
 import apache_beam as beam
 from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.testing.util import assert_that, equal_to
-
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
 from pipeline_components.data_cleaning.HandleNaNValues import HandleNaNValues
 from unit_tests.utils.csv_reader import read_csv
 
@@ -30,3 +24,24 @@ def test_handle_nan_values():
 
         # Assert the output
         assert_that(output_pcoll, equal_to(expected_output))
+
+
+@pytest.mark.HandleNaNValues
+def test_handle_nan_values_invalid_strategy():
+    # Expect the test to raise a ValueError due to invalid strategy
+    with pytest.raises(ValueError, match="Invalid strategy 'invalid_strategy'. Supported strategies are 'replace' or 'remove'."):
+        HandleNaNValues(strategy='invalid_strategy', default_value='default')
+
+
+@pytest.mark.HandleNaNValues
+def test_handle_nan_values_invalid_columns_type():
+    # Expect the test to raise a TypeError due to invalid columns type
+    with pytest.raises(TypeError, match="Columns must be a list, but got str."):
+        HandleNaNValues(strategy='replace', default_value='default', columns='invalid_column')
+
+
+@pytest.mark.HandleNaNValues
+def test_handle_nan_values_invalid_columns_content():
+    # Expect the test to raise a ValueError due to non-string column in the list
+    with pytest.raises(ValueError, match="All columns must be strings."):
+        HandleNaNValues(strategy='replace', default_value='default', columns=['valid_column', 123])

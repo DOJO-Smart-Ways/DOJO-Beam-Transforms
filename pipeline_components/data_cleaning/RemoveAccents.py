@@ -1,37 +1,33 @@
 import apache_beam as beam
+import unicodedata
 
 class RemoveAccents(beam.DoFn):
     """
-    A class to remove accents from specified columns of elements.
+    A DoFn for removing accents from specified columns in each element of a PCollection.
 
-    Attributes:
-        columns (list): A list of column names from which accents will be removed.
+    Parameters:
+    - columns: A list of column names where accents will be removed.
     """
-
     def __init__(self, columns):
-        """
-        Initializes the RemoveAccents object with the specified columns.
-
-        Args:
-            columns (list): A list of column names from which accents will be removed.
-        """
+        # Validate columns
+        if not isinstance(columns, list):
+            raise TypeError(f"Columns must be a list, but got {type(columns).__name__}.")
+        if not all(isinstance(col, str) for col in columns):
+            raise ValueError("All columns must be strings.")
         self.columns = columns
 
     def process(self, element):
-        """
-        Processes each element in the pipeline, removing accents from specified columns.
-
-        Args:
-            element (dict): The element to be processed.
-
-        Returns:
-            list: A list containing the processed element with accents removed.
-        """
-        from unidecode import unidecode
-        try:
-            for col in self.columns:
-                if col in element and element[col] is not None:
-                    element[col] = unidecode(str(element[col]))
-        except Exception as e:
-            print(f"Error while removing accents: {e}")
-        return [element]
+        # Remove accents from the specified columns
+        for column in self.columns:
+            try:
+                if column not in element:
+                    raise ValueError(f"Column '{column}' not found in element: {element}")
+                if not isinstance(element[column], str):
+                    raise TypeError(f"Column '{column}' value is not a string: {element}")
+                element[column] = ''.join(
+                    c for c in unicodedata.normalize('NFD', element[column]) if unicodedata.category(c) != 'Mn'
+                )
+            except (ValueError, TypeError) as e:
+                yield {"error": str(e)}
+                return
+        yield element

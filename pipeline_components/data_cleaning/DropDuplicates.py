@@ -2,49 +2,41 @@ import apache_beam as beam
 
 class DropDuplicates(beam.DoFn):
     """
-    A DoFn that removes duplicate elements from a PCollection based on specified columns or the entire element.
-    
-    This function is useful for data cleaning and preprocessing, where you may want to ensure that each element
-    in the PCollection is unique based on certain criteria.
-    
-    Attributes:
-        columns (list of str, optional): A list of column names to consider for deduplication. If not provided,
-                                         the entire element will be used for deduplication.
+    A DoFn for removing duplicate elements from a PCollection based on specific keys (columns) or the entire element.
+
+    Parameters:
+    - columns: A list of column names to consider for deduplication. If None, the entire element will be used.
     """
-    
     def __init__(self, columns=None):
-        """
-        Initializes the DropDuplicates instance with the columns to consider for deduplication.
-        
-        Args:
-            columns (list of str, optional): The names of the columns to consider for deduplication.
-                                             If not provided, the entire element will be used.
-        """
-        self.seen = set()
-        self.columns = columns
+        self.columns = columns if columns else []
 
-    def process(self, element):
-        """
-        Processes each element in the PCollection, yielding only unique elements based on the specified columns
-        or the entire element.
-        
-        Args:
-            element (dict): An element of the PCollection, expected to be a dictionary.
-            
-        Yields:
-            The unique element if it has not been seen before; otherwise, nothing is yielded.
-        """
-        # If columns are specified, create a sub-dictionary with only those columns
-        if self.columns and isinstance(element, dict):
-            sub_element = {col: element[col] for col in self.columns if col in element}
-            hashable_element = tuple(sorted(sub_element.items()))
-        else:
-            # Convert the element to a hashable type if it's a dictionary
-            if isinstance(element, dict):
-                hashable_element = tuple(sorted(element.items()))
+        # Validate columns during initialization
+        if not isinstance(self.columns, list):
+            raise TypeError(f"Columns must be a list, but got {type(self.columns).__name__}")
+        if not all(isinstance(col, str) for col in self.columns):
+            raise ValueError("All columns must be strings.")
+
+    def process(self, element, seen=set()):
+        try:
+            # Check if element is a dictionary
+            if not isinstance(element, dict):
+                raise TypeError(f"Element is not a dictionary: {element}")
+
+            # Generate a deduplication key
+            if self.columns:
+                for col in self.columns:
+                    if col not in element:
+                        raise ValueError(f"Column '{col}' not found in element: {element}")
+                dedup_key = tuple(element[col] for col in self.columns)
             else:
-                hashable_element = element
+                dedup_key = tuple(element.items())
 
-        if hashable_element not in self.seen:
-            self.seen.add(hashable_element)
+            # Check if the deduplication key has already been seen
+            if dedup_key in seen:
+                return
+            seen.add(dedup_key)
+
             yield element
+
+        except (TypeError, ValueError) as e:
+            yield {"error": str(e)}

@@ -29,3 +29,35 @@ def test_remove_accents():
 
         # Assert the output
         assert_that(output_pcoll, equal_to(expected_output))
+
+@pytest.mark.RemoveAccents
+def test_remove_accents_invalid_columns_type():
+    # Expect the test to raise a TypeError due to invalid columns type
+    with pytest.raises(TypeError, match="Columns must be a list, but got str."):
+        RemoveAccents(columns="invalid_column")
+
+@pytest.mark.RemoveAccents
+def test_remove_accents_invalid_columns_content():
+    # Expect the test to raise a ValueError due to non-string column in the list
+    with pytest.raises(ValueError, match="All columns must be strings."):
+        RemoveAccents(columns=["valid_column", 123])
+
+@pytest.mark.RemoveAccents
+def test_remove_accents_column_not_found():
+    # Define input data
+    input_data = [
+        {'name': 'Alice', 'city': 'São Paulo'}
+    ]
+    
+    # Define expected output for error handling
+    expected_output = [
+        {"error": "Column 'non_existent_column' not found in element: {'name': 'Alice', 'city': 'São Paulo'}"}
+    ]
+
+    # Run the pipeline and validate the error output
+    with TestPipeline() as p:
+        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+        output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['non_existent_column']))
+
+        # Assert the output contains the error message
+        assert_that(output_pcoll, equal_to(expected_output))

@@ -1,4 +1,6 @@
 import csv
+import os
+
 
 def read_csv(file_path):
     """
@@ -10,6 +12,7 @@ def read_csv(file_path):
     Returns:
     - A list of dictionaries containing the CSV data.
     """
-    with open(file_path, mode='r') as file:
+    full_path = os.path.abspath('unit_tests/data/' + file_path)
+    with open(full_path, mode='r') as file:
         reader = csv.DictReader(file)
         return [row for row in reader]

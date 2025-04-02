@@ -22,3 +22,72 @@ def test_derive_single_value():
 
         # Assert the output
         assert_that(output_pcoll, equal_to(expected_output))
+
+@pytest.mark.DeriveSingleValue
+def test_derive_single_value_non_dict_element():
+    # Define input data with a non-dictionary element
+    input_data = [
+        {'id': 1, 'name': 'Alice'},
+        ['invalid', 'element']
+    ]
+    
+    # Define expected output for error handling
+    expected_output = [
+        {"error": "Element is not a dictionary: ['invalid', 'element']"}
+    ]
+
+    # Run the pipeline and validate the error output
+    with TestPipeline() as p:
+        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+        output_pcoll = input_pcoll | 'Apply DeriveSingleValue' >> beam.ParDo(DeriveSingleValue('active', 'status'))
+
+        # Assert the output contains the error message
+        assert_that(output_pcoll, equal_to(expected_output))
+
+@pytest.mark.DeriveSingleValue
+def test_derive_single_value_column_exists():
+    # Define input data where the new column already exists
+    input_data = [
+        {'id': 1, 'name': 'Alice', 'status': 'existing'}
+    ]
+    
+    # Define expected output for error handling
+    expected_output = [
+        {'error': "Column 'status' already exists in element: {'id': 1, 'name': 'Alice', 'status': 'existing'}"}
+    ]
+
+    # Run the pipeline and validate the error output
+    with TestPipeline() as p:
+        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+        output_pcoll = input_pcoll | 'Apply DeriveSingleValue' >> beam.ParDo(DeriveSingleValue('active', 'status'))
+
+        # Assert the output contains the error message
+        assert_that(output_pcoll, equal_to(expected_output))
+
+@pytest.mark.DeriveSingleValue
+def test_derive_single_value_invalid_type():
+    # Expect the test to raise a TypeError due to mismatched value type
+    with pytest.raises(TypeError, match="Value 'active' does not match the expected type int"):
+        DeriveSingleValue(value='active', new_column='status', value_type=int)
+
+@pytest.mark.DeriveSingleValue
+def test_derive_single_value_valid_type():
+    # Define input data
+    input_data = [
+        {'id': 1, 'name': 'Alice'},
+        {'id': 2, 'name': 'Bob'}
+    ]
+    
+    # Define expected output
+    expected_output = [
+        {'id': 1, 'name': 'Alice', 'status': 1},
+        {'id': 2, 'name': 'Bob', 'status': 1}
+    ]
+
+    # Run the pipeline
+    with TestPipeline() as p:
+        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+        output_pcoll = input_pcoll | 'Apply DeriveSingleValue' >> beam.ParDo(DeriveSingleValue(value=1, new_column='status', value_type=int))
+
+        # Assert the output
+        assert_that(output_pcoll, equal_to(expected_output))

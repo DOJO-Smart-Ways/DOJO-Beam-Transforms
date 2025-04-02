@@ -26,3 +26,15 @@ def test_rename_columns():
 
         # Assert the output
         assert_that(output_pcoll, equal_to(expected_output))
+
+@pytest.mark.RenameColumns
+def test_rename_columns_invalid_mapping_type():
+    # Expect the test to raise a TypeError due to invalid rename_mapping type
+    with pytest.raises(TypeError, match="rename_mapping must be a dictionary, but got list."):
+        RenameColumns(rename_mapping=["invalid_mapping"])
+
+@pytest.mark.RenameColumns
+def test_rename_columns_invalid_mapping_content():
+    # Expect the test to raise a ValueError due to non-string keys or values in rename_mapping
+    with pytest.raises(ValueError, match="All keys and values in rename_mapping must be strings."):
+        RenameColumns(rename_mapping={"valid_key": 123})

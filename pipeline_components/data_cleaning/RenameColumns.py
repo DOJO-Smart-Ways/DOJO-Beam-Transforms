@@ -11,8 +11,13 @@ class RenameColumns(beam.DoFn):
         Initializes the RenameColumns instance.
         
         Args:
-            column_mapping (dict): A dictionary mapping from old column names to new column names.
+            column_mapping (dict): A dictionary mapping from old column names to new column names where keys are actual columns names and values are the new expected column name.
         """
+        # Validate column_mapping
+        if not isinstance(column_mapping, dict):
+            raise TypeError(f"column_mapping must be a dictionary, but got {type(column_mapping).__name__}.")
+        if not all(isinstance(key, str) and isinstance(value, str) for key, value in column_mapping.items()):
+            raise ValueError("All keys and values in column_mapping must be strings.")
         self.column_mapping = column_mapping
 
     def process(self, element):
