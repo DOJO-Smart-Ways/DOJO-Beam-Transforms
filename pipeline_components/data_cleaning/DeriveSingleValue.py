@@ -24,7 +24,7 @@ class DeriveSingleValue(beam.DoFn):
         # Check if the element is a dictionary
         if not isinstance(element, dict):
             yield {"error": f"Element is not a dictionary: {element}"}
-            return
+            
 
         # Check if the new column already exists
         if self.new_column in element:

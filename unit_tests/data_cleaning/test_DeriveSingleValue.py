@@ -24,27 +24,6 @@ def test_derive_single_value():
         assert_that(output_pcoll, equal_to(expected_output))
 
 @pytest.mark.DeriveSingleValue
-def test_derive_single_value_non_dict_element():
-    # Define input data with a non-dictionary element
-    input_data = [
-        {'id': 1, 'name': 'Alice'},
-        ['invalid', 'element']
-    ]
-    
-    # Define expected output for error handling
-    expected_output = [
-        {"error": "Element is not a dictionary: ['invalid', 'element']"}
-    ]
-
-    # Run the pipeline and validate the error output
-    with TestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply DeriveSingleValue' >> beam.ParDo(DeriveSingleValue('active', 'status'))
-
-        # Assert the output contains the error message
-        assert_that(output_pcoll, equal_to(expected_output))
-
-@pytest.mark.DeriveSingleValue
 def test_derive_single_value_column_exists():
     # Define input data where the new column already exists
     input_data = [

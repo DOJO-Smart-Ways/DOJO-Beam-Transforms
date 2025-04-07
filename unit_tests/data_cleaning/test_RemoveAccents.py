@@ -3,28 +3,34 @@ import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline
 from pipeline_components.data_cleaning.RemoveAccents import RemoveAccents
-from unit_tests.utils.csv_reader import read_csv
 
 @pytest.mark.RemoveAccents
 def test_remove_accents():
-    # Read input data from california_housing.csv
-    input_data = read_csv('california_housing.csv')
-    
     # Example: Assume 'city_name' column contains accented characters
-    input_data = [
-        {**row, 'city_name': 'São Paulo'} if 'city_name' in row else row
-        for row in input_data
+    input_data_test = [
+        {'city_name': 'São Paulo'},
+        {'city_name': 'Tóquio'},
+        {'city_name': 'Bàhia'},
+        {'city_name': 'München'},
+        {'city_name': 'Zürich'},
+        {'city_name': 'São Paulo'},
+        {'city_name': 'Santiagô'}
     ]
     
     # Define expected output (accents removed from 'city_name')
     expected_output = [
-        {**row, 'city_name': 'Sao Paulo'} if 'city_name' in row else row
-        for row in input_data
+        {'city_name': 'Sao Paulo'},
+        {'city_name': 'Toquio'},
+        {'city_name': 'Bahia'},
+        {'city_name': 'Munchen'},
+        {'city_name': 'Zurich'},
+        {'city_name': 'Sao Paulo'},
+        {'city_name': 'Santiago'}
     ]
 
     # Run the pipeline
     with TestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+        input_pcoll = p | 'Create Input' >> beam.Create(input_data_test)
         output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['city_name']))
 
         # Assert the output
@@ -60,4 +66,28 @@ def test_remove_accents_column_not_found():
         output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['non_existent_column']))
 
         # Assert the output contains the error message
+        assert_that(output_pcoll, equal_to(expected_output))
+
+@pytest.mark.RemoveAccents
+def test_remove_accents_single_column():
+    # Define input data with multiple columns
+    input_data = [
+        {'city_name': 'São Paulo', 'country': 'Brasil'},
+        {'city_name': 'Tóquio', 'country': 'Japão'},
+        {'city_name': 'Bàhia', 'country': 'Brasil'}
+    ]
+
+    # Define expected output (accents removed only from 'city_name')
+    expected_output = [
+        {'city_name': 'Sao Paulo', 'country': 'Brasil'},
+        {'city_name': 'Toquio', 'country': 'Japão'},
+        {'city_name': 'Bahia', 'country': 'Brasil'}
+    ]
+
+    # Run the pipeline
+    with TestPipeline() as p:
+        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+        output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['city_name']))
+
+        # Assert the output
         assert_that(output_pcoll, equal_to(expected_output))
