@@ -347,65 +347,9 @@ class ColumnsToStringConverter(beam.DoFn):
         yield element
 
 
-class ColumnsToFloatConverter(beam.DoFn):
-    def __init__(self, columns_to_float):
-        """
-        Initializes the ColumnsToFloatConverter instance.
-
-        Args:
-            columns_to_float (list of str): A list of column names whose values should be converted to floats.
-        """
-        self.columns_to_float = columns_to_float
-
-    def process(self, element):
-        """
-        Processes each element, converting specified column values to float, while handling 'None', empty strings, and 'NaN'.
-
-        Args:
-            element (dict): The input element to process, where keys are column names.
-        """
-        for column in self.columns_to_float:
-            # Ensure the column exists in the element
-            if column in element:
-                # Handle None, empty string, and 'NaN' by setting them to None
-                if element[column] is None or element[column] == "" or str(element[column]).lower() == 'nan':
-                    element[column] = None
-                else:
-                    # Attempt to convert to float, otherwise, leave as is
-                    try:
-                        element[column] = float(element[column])
-                    except ValueError:
-                        pass
-        yield element
 
 
-class ColumnsToIntegerConverter(beam.DoFn):
-    def __init__(self, columns_to_integer):
-        """
-        Initializes the ColumnsToIntegerConverter instance.
-        
-        Args:
-            columns_to_integer (list of str): A list of column names whose values should be converted to strings.
-        """
-        self.columns_to_integer = columns_to_integer
 
-    def process(self, element):
-        """
-        Processes each element, converting specified column values to integer.
-        
-        Args:
-            element (dict): The input element to process, where keys are column names.
-        """
-        for column in self.columns_to_integer:
-            if column in element and isinstance(element[column], (str, float, Decimal)):
-                try:
-                  if element[column] == "":
-                    element[column] = 0
-                  else:
-                    element[column] = int(element[column])
-                except ValueError:
-                  pass
-        yield element
 
 
 def join(table1, table2, method='left_join', columns_to_include=None):
@@ -452,55 +396,7 @@ def key_transform(p_collection, key_columns, identifier=''):
             | f"Transform Key {key_columns} on {identifier_suffix}" >> beam.ParDo(CreateKeyDoFn(key_columns)))
 
 
-class AddPeriodColumn(beam.DoFn):
-    """
-    A custom DoFn class for Apache Beam to dynamically add a new column to each element in a PCollection
-    based on the date information from a specified input column. The new column will contain a string
-    representing a date format specified by the user, derived from the date in the input column.
-    
-    This implementation allows specifying the names of the input and output columns dynamically, as well
-    as the format of the output date string.
-    """
-    
-    def process(self, element, input_column, output_column, date_format):
-        import calendar
-        """
-        The process method is called on each element of the input PCollection.
-        
-        Args:
-            element: A dictionary representing a single record in the PCollection.
-            input_column: The name of the column in 'element' that contains date information.
-            output_column: The name of the column to be added to 'element', which will contain the
-                           formatted date string.
-            date_format: A string representing the desired format of the output date. It should follow
-                         the Python strftime format codes.
-        
-        Yields:
-            The same element dictionary with an added column named as specified by 'output_column'. The
-            value in this column is a string formatted according to 'date_format', derived from the date
-            in 'input_column'.
-        """
-        # Ensure the specified input column is present in the element.
-        if input_column not in element:
-            raise ValueError(f"Element must contain an '{input_column}' field")
 
-        # Extract the date object from the specified input column of the element.
-        date_obj = element[input_column]
-        
-        # Use the calendar module to find the last day of the month for the given date.
-        last_day = calendar.monthrange(date_obj.year, date_obj.month)[1]
-        
-        # Create a new date object with the last day of the month.
-        last_day_date_obj = date_obj.replace(day=last_day)
-
-        # Format the date according to the specified format.
-        formatted_date_str = last_day_date_obj.strftime(date_format)
-
-        # Add the new column to the element with the specified name and the formatted date string.
-        element[output_column] = formatted_date_str
-
-        # Yield the modified element back to the pipeline.
-        yield element
 
 
 class ConvertDateFn(beam.DoFn):
@@ -730,117 +626,7 @@ class GenericDeriveConditionComplex(beam.DoFn):
         yield element
 
 
-class ColumnsToDecimalConverter(beam.DoFn):
-    """
-    A custom Apache Beam transformation to extract decimal values from one or more fields in an element.
-
-    Args:
-        columns: A list of column names to be processed.
-    """
-    def __init__(self, columns):
-        self.columns = columns
-
-    def process(self, element):
-        """
-        Processes an element, extracts decimal values from the specified fields, and replaces them with the extracted values.
-
-        Args:
-            element: The element to be processed.
-            columns: A list Variable arguments containing the names of the columns to be processed.
-
-        Yields:
-            A new element with the extracted decimal values.
-        """
-
-        for column in self.columns:
-            if column in element:
-                input_string = element[column]
-                cleaned_value = self.extract_decimal(input_string)
-                if cleaned_value is not None:
-                    element[column] = cleaned_value
-                else:
-                    element[column] = Decimal(0.0)  # Assign 0 when cleaned_value is None or empty string
-        yield element
-
-    def extract_decimal(self, input_string):
-      """
-      Converts an input value to a Decimal object with 5 decimal places.
-
-      Args:
-          input_value: The input value to be converted.
-
-      Returns:
-          A Decimal object representing the input value with 5 decimal places.
-      """
-      if input_string is None or input_string == "" or isinstance(input_string, str):
-          return Decimal(0)  # Return 0 if input_value is None
-
-      try:
-          # Convert the input value to a Decimal with 5 decimal places
-          return Decimal(input_string).quantize(Decimal('0.00000'))
-      except (InvalidOperation, ValueError):
-          # If conversion to Decimal fails, return 0
-          return Decimal(0.0)
       
-
-class ColumnCopy(beam.DoFn):
-    def __init__(self, copy_column_name, paste_column_name):
-        """
-        Initializes the ColumnCopyDoFn.
-
-        Args:
-            copy_column_name (str): The name of the column to copy from.
-            paste_column_name (str): The name of the column to paste into.
-        """
-        self.copy_column_name = copy_column_name
-        self.paste_column_name = paste_column_name
-
-    def process(self, element):
-        """
-        Copies the value of one column to another column in the given element.
-
-        Args:
-            element (dict): A dictionary representing a row, with column names as keys and values as values.
-
-        Yields:
-            dict: A dictionary representing the modified row after copying the column value.
-        """
-        # Validate input column names
-        if self.copy_column_name not in element:
-            raise ValueError(f"Column '{self.copy_column_name}' not found in the input data.")
-        if self.paste_column_name in element:
-            raise ValueError(f"Column '{self.paste_column_name}' already exists in the input data.")
-
-        # Copy the column value
-        element[self.paste_column_name] = element[self.copy_column_name]
-        
-        yield element
-
-class ColumnValueAssignment(beam.DoFn):
-    def __init__(self, value, new_column):
-        """
-        Initializes the DoFn with the necessary parameters.
-
-        Parameters:
-        - value: The single value to be assigned to the new column.
-        - new_column: The name of the new column.
-        """
-        self.value = value
-        self.new_column = new_column
-
-    def process(self, element):
-        """
-        Assigns the single value to the new column.
-
-        Args:
-        - element (dict): A dictionary representing a row, with column names as keys and values as values.
-
-        Yields:
-        - dict: A dictionary representing the modified row after assigning the single value to the new column.
-        """
-        # Assign the single value to the new column
-        element[self.new_column] = self.value
-        yield element
 
 
 class OrderFieldsBySchema(beam.DoFn):
