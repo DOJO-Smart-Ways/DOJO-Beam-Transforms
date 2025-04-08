@@ -14,6 +14,7 @@ setup(
         'openpyxl==3.0.10',
         'fsspec==2024.6.1',
         'gcsfs==2024.6.1',
-        'google-cloud-secret-manager==2.22.0'
+        'google-cloud-secret-manager==2.22.0',
+        'pytz==2025.2'
     ],
 )
