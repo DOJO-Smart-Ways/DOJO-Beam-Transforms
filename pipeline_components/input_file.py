@@ -128,6 +128,32 @@ class ProcessPDF(beam.DoFn):
                     }
                     yield row_data
 
+
+def read_json(pipeline, input_file, identifier=''):
+    import json
+    # Add a suffix to transformation names to ensure uniqueness if an identifier is provided
+    identifier_suffix = f"_{identifier}" if identifier else ""
+
+    # Define a custom DoFn class to parse JSON lines
+    class ParseJson(beam.DoFn):
+        def process(self, element):
+            try:
+                # Try to parse the JSON line
+                record = json.loads(element)
+                # Yield the parsed JSON object if successful
+                yield record
+            except json.JSONDecodeError as e:
+                # If parsing fails, yield the line and error message to a tagged output
+                yield beam.pvalue.TaggedOutput('invalid_records', (element, str(e)))
+
+    return (
+        pipeline
+        | f'Create File Path JSON {identifier_suffix}' >> beam.Create([input_file])
+        | f'Read JSON Lines {identifier_suffix}' >> beam.io.ReadFromText(input_file)
+        | f'Parse JSON {identifier_suffix}' >> beam.ParDo(ParseJson()).with_outputs('invalid_records', main='records')
+    )
+
+
 def read_pdf(pipeline, input_file, identifier=''):
     from apache_beam.io import fileio
     identifier_suffix = f"_{identifier}" if identifier else ""
