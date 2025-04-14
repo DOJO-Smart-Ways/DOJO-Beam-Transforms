@@ -115,8 +115,8 @@ class PipelineOptionsProvider:
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
         google_cloud_options.project = self.gcp_project
         google_cloud_options.region = self.region
-        google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'temp')
-        google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'staging')
+        google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'temp', self.product)
+        google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_project}-staging', self.product)
         
         
         if self.runner == BeamRunner.DATAFLOW.value and self.template_name is None:
