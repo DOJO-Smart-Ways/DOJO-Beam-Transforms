@@ -2,48 +2,39 @@ import apache_beam as beam
 
 class MergeColumns(beam.DoFn):
     """
-    A DoFn that merges the values of specified columns into a new column using a delimiter.
-
-    Attributes:
-        merge_instructions (list): A list of tuples, where each tuple contains:
-            - A list of column names to merge.
-            - The name of the new column to store the merged value.
-            - An optional delimiter to use for merging (default: an empty string).
+    A Beam DoFn class for merging multiple columns into a single column with a specified delimiter.
     """
-    def __init__(self, merge_instructions):
+    
+    def __init__(self, params):
         """
-        Initializes the MergeColumns instance with a set of merge instructions.
-
+        Initializes the class with parameters for merging columns.
+        
         Args:
-            merge_instructions (list): A list of tuples (columns_to_merge, new_column_name, delimiter).
+            params (list of tuples): Each tuple contains:
+                - columns (list of str): Columns to merge.
+                - result_column (str): The name of the resulting column.
+                - delimiter (str): The delimiter to use for merging.
         """
-        self.merge_instructions = merge_instructions
+        self.params = params
 
     def process(self, element):
         """
-        Processes each element to merge specified columns based on the merge instructions.
-
-        Args:
-            element (dict): The input element to process.
-
-        Yields:
-            dict: The modified element with the new merged columns added.
+        Processes each element to merge specified columns.
         """
-        try:
-            for columns_to_merge, new_column_name, delimiter in self.merge_instructions:
-                # Check if all columns to merge exist in the element
-                if all(col in element for col in columns_to_merge):
-                    try:
-                        # Join the specified columns with the provided delimiter
-                        merged_value = delimiter.join([str(element[col]) for col in columns_to_merge])
-                        element[new_column_name] = merged_value
-                    except Exception as e:
-                        raise ValueError(f"Error merging columns {columns_to_merge} into '{new_column_name}': {e}")
-                else:
-                    # Raise an error if any column is missing
-                    missing_columns = [col for col in columns_to_merge if col not in element]
-                    raise KeyError(f"Missing columns {missing_columns} in element: {element}")
-        except Exception as e:
-            raise ValueError(f"Error processing element {element}: {e}")
-
+        for columns, result_column, delimiter in self.params:
+            # Check if the result column already exists
+            if result_column in element:
+                raise ValueError(f"Target column '{result_column}' already exists in the element: {element}")
+            
+            # Check if all source columns exist
+            for col in columns:
+                if col not in element:
+                    raise KeyError(f"Missing column '{col}' in the element: {element}")
+            
+            # Merge columns with the specified delimiter
+            try:
+                element[result_column] = delimiter.join(str(element[col]) for col in columns)
+            except Exception as e:
+                raise ValueError(f"Error merging columns {columns} into '{result_column}': {e}")
+        
         yield element

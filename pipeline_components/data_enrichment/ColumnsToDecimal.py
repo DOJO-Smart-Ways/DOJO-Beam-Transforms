@@ -5,7 +5,8 @@ class ColumnsToDecimal(beam.DoFn):
     """
     Converts specified columns in the input data to decimal type.
 
-    This transform ensures that the specified columns are converted to Decimal, raising errors for invalid conversions.
+    This transform ensures that the specified columns are converted to Decimal, handling None values gracefully
+    and raising errors for invalid conversions.
 
     Attributes:
         columns (list): List of column names to convert to Decimal.
@@ -24,11 +25,17 @@ class ColumnsToDecimal(beam.DoFn):
             raise ValueError("Input element must be a dictionary.")
 
         for column in self.columns:
-            if column in element:
-                try:
-                    element[column] = Decimal(element[column])
-                except (InvalidOperation, ValueError) as e:
-                    yield {"error": f"Error converting column '{column}' to Decimal: {e}", "element": element}
-                    return
+            if column not in element:
+                raise KeyError(f"Column '{column}' not found in the input element: {element}")
+
+            # Skip conversion if the value is None
+            if element[column] is None:
+                continue
+
+            try:
+                element[column] = Decimal(element[column])
+            except (InvalidOperation, ValueError):
+                raise ValueError(f"Error converting on column '{column}' to Decimal. Element {element}")
+                
 
         yield element

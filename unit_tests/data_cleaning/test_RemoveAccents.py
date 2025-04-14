@@ -1,7 +1,7 @@
 import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
-from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from pipeline_components.data_cleaning.RemoveAccents import RemoveAccents
 
 @pytest.mark.RemoveAccents
@@ -29,7 +29,7 @@ def test_remove_accents():
     ]
 
     # Run the pipeline
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data_test)
         output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['city_name']))
 
@@ -61,7 +61,7 @@ def test_remove_accents_column_not_found():
     ]
 
     # Run the pipeline and validate the error output
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['non_existent_column']))
 
@@ -85,7 +85,7 @@ def test_remove_accents_single_column():
     ]
 
     # Run the pipeline
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['city_name']))
 

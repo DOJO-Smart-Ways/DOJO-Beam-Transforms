@@ -1,7 +1,7 @@
 import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
-from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from pipeline_components.data_cleaning.ReplaceRegex import ReplaceRegex
 
 @pytest.mark.ReplaceRegex
@@ -22,7 +22,7 @@ def test_replace_regex():
     ]
 
     # Run the pipeline
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply ReplaceRegex' >> beam.ParDo(ReplaceRegex(columns=['city_name'], patterns=patterns))
 

@@ -2,60 +2,43 @@ import apache_beam as beam
 
 class SplitColumn(beam.DoFn):
     """
-    A DoFn for splitting a column's value into multiple separate parts based on a specified delimiter
-    and assigning each part to new columns in the input element. This transformation is useful when a
-    single column contains composite data that needs to be separated for further analysis or processing.
-
-    Attributes:
-        column_to_split (str): The name of the column whose value is to be split.
-        new_columns (list of str): A list containing the names of the new columns to store the split parts.
-        delimiter (str): The delimiter to use for splitting the column's value (default: ',').
-        limit_splits (int, optional): The maximum number of splits to perform (default: None, meaning no limit).
+    A DoFn that splits a column's value into multiple parts based on a delimiter
+    and assigns the resulting values either as a list to a single column or to multiple columns.
     """
-    def __init__(self, column_to_split, new_columns, delimiter=',', limit_splits=None):
+    def __init__(self, column_to_split, new_columns, delimiter, as_list=True):
         """
-        Initializes the SplitColumn with the column to split, the names of the new columns, and the delimiter.
+        Initializes the SplitColumn DoFn.
 
         Args:
             column_to_split (str): The name of the column to split.
-            new_columns (list of str): The names of the new columns for the split parts.
-            delimiter (str, optional): The delimiter to use for splitting the value (default: ',').
-            limit_splits (int, optional): The maximum number of splits to perform (default: None).
+            new_columns (list): The name(s) of the new column(s) to assign the split values.
+            delimiter (str): The delimiter to use for splitting the column's value.
+            as_list (bool): If True, assign the split values as a list to the first new column.
+                            If False, assign the split values to multiple columns.
         """
         self.column_to_split = column_to_split
         self.new_columns = new_columns
         self.delimiter = delimiter
-        self.limit_splits = limit_splits
+        self.as_list = as_list
 
     def process(self, element):
         """
-        Splits the specified column's value using the provided delimiter and assigns the resulting parts
-        to new columns in the element. If there are fewer parts than new columns, the remaining new columns
-        are set to None. If there are fewer new column names provided than the parts, only the provided
-        new columns are populated.
+        Processes each element, splitting the specified column's value and assigning
+        the resulting values to the new column(s).
 
         Args:
-            element (dict): An element of the PCollection, expected to be a dictionary where the column
-                            to split exists.
+            element (dict): The input element.
 
         Yields:
-            dict: The modified element with new columns added for the split parts of the original column's value.
+            dict: The modified element with the new column(s) added.
         """
-        try:
-            if self.column_to_split not in element:
-                raise KeyError(f"Column '{self.column_to_split}' not found in the input element: {element}")
-
-            # Split the column value using the delimiter
-            if self.limit_splits is None:
-                parts = element.get(self.column_to_split, '').split(self.delimiter)
+        if self.column_to_split in element:
+            split_values = element[self.column_to_split].split(self.delimiter)
+            if self.as_list:
+                # Assign the list of split values to the first new column
+                element[self.new_columns[0]] = split_values
             else:
-                parts = element.get(self.column_to_split, '').split(self.delimiter, self.limit_splits)
-
-            # Assign split parts to new columns, defaulting to None if the part is not available
-            for i, new_column in enumerate(self.new_columns):
-                element[new_column] = parts[i] if i < len(parts) else None
-
-        except Exception as e:
-            raise ValueError(f"Error processing element {element}: {e}")
-
+                # Assign the split values to multiple columns
+                for i, column in enumerate(self.new_columns):
+                    element[column] = split_values[i] if i < len(split_values) else None
         yield element

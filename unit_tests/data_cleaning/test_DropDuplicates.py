@@ -1,7 +1,7 @@
 import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
-from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from pipeline_components.data_cleaning.DropDuplicates import DropDuplicates
 
 @pytest.mark.DropDuplicates
@@ -20,7 +20,7 @@ def test_drop_duplicates():
     ]
 
     # Run the pipeline
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))
 
@@ -41,7 +41,7 @@ def test_drop_duplicates_non_dict_element():
     ]
 
     # Run the pipeline and validate the error output
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))
 
@@ -62,7 +62,7 @@ def test_drop_duplicates_missing_column():
     ]
 
     # Run the pipeline and validate the error output
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))
 

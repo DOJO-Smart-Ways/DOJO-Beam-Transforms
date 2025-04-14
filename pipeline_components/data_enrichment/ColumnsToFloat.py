@@ -4,7 +4,8 @@ class ColumnsToFloat(beam.DoFn):
     """
     Converts specified columns in the input data to float type.
 
-    This transform ensures that the specified columns are converted to float, raising errors for invalid conversions.
+    This transform ensures that the specified columns are converted to float, handling None values gracefully
+    and raising errors for invalid conversions.
 
     Attributes:
         columns (list): List of column names to convert to float.
@@ -23,11 +24,16 @@ class ColumnsToFloat(beam.DoFn):
             raise ValueError("Input element must be a dictionary.")
 
         for column in self.columns:
-            if column in element:
-                try:
-                    element[column] = float(element[column])
-                except (ValueError, TypeError) as e:
-                    yield {"error": f"Error converting column '{column}' to float: {e}", "element": element}
-                    return
+            if column not in element:
+                raise KeyError(f"Column '{column}' not found in the input element: {element}")
+
+            # Skip conversion if the value is None
+            if element[column] is None:
+                continue
+
+            try:
+                element[column] = float(element[column])
+            except (ValueError, TypeError):
+                raise ValueError(f"Error converting on column '{column}' to Float. Element {element}")
 
         yield element

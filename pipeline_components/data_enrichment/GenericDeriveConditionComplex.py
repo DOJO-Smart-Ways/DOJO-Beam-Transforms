@@ -51,6 +51,10 @@ class GenericDeriveConditionComplex(beam.DoFn):
         Yields:
             dict: The modified element with the new column added or updated.
         """
+        # Check if the target column already exists
+        if self.new_column in element:
+            raise ValueError(f"Target column '{self.new_column}' already exists in the element: {element}")
+
         try:
             # Evaluate each condition against the element
             for condition in self.conditions:

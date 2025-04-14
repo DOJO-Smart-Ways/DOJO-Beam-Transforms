@@ -23,13 +23,13 @@ class ColumnValueAssignment(beam.DoFn):
     def process(self, element):
         # Check if the element is a dictionary
         if not isinstance(element, dict):
-            yield {"error": f"Element is not a dictionary: {element}"}
+            raise ValueError(f"Error: element is not a dictionary: {element}")
             
 
         # Check if the new column already exists
         if self.new_column in element:
-            yield {"error": f"Column '{self.new_column}' already exists in element: {element}"}
-            return
+            raise ValueError(f"Error: Column '{self.new_column}' already exists in element: {element}")
+            
 
         # Assign the single value to the new column
         element[self.new_column] = self.value

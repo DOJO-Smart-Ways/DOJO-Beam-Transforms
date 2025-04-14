@@ -1,7 +1,7 @@
 import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
-from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from pipeline_components.data_cleaning.RenameColumns import RenameColumns
 from unit_tests.utils.csv_reader import read_csv
 
@@ -20,7 +20,7 @@ def test_rename_columns():
     ]
 
     # Run the pipeline
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply RenameColumns' >> beam.ParDo(RenameColumns(rename_mapping))
 

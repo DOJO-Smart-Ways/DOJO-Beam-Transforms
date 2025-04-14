@@ -1,7 +1,7 @@
 import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
-from apache_beam.testing.test_pipeline import TestPipeline
+from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from pipeline_components.data_cleaning.ReplaceValues import ReplaceValues
 
 @pytest.mark.ReplaceValues
@@ -24,7 +24,7 @@ def test_replace_values():
     ]
 
     # Run the pipeline
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply ReplaceValues' >> beam.ParDo(ReplaceValues(columns=['status'], replacements=replacements))
 
@@ -49,7 +49,7 @@ def test_replace_values_column_not_found():
     ]
 
     # Run the pipeline and validate the error output
-    with TestPipeline() as p:
+    with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply ReplaceValues' >> beam.ParDo(ReplaceValues(columns=['non_existent_column'], replacements=replacements))
 

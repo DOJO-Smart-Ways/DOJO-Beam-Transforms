@@ -27,10 +27,13 @@ class ReplaceMissingValues(beam.DoFn):
             dict: The modified element with missing or invalid values replaced.
         """
         try:
+            replaceables = [None, '', float('nan')]
             for column, replacement_value in self.replacements.items():
-                if column not in element or element[column] in [None, '', float('nan')]:
+
+                # Check for missing or invalid values
+                if element[column] in replaceables:
                     element[column] = replacement_value
         except Exception as e:
-            raise ValueError(f"Error processing element {element}: {e}")
+            raise KeyError(f"Column '{column}' not found in the input element: {element}")
 
         yield element

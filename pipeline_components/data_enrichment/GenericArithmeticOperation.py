@@ -29,6 +29,10 @@ class GenericArithmeticOperation(beam.DoFn):
             result_column = operation.get('result_column')
             formula = operation.get('formula', lambda x: x)  # A lambda function to apply on operands
             
+            # Check if the result column already exists
+            if result_column in element:
+                raise ValueError(f"Target column '{result_column}' already exists in the element: {element}")
+
             # Gather operand values, default to 0 if not found or None
             try:
                 values = [element[col] for col in operands]
