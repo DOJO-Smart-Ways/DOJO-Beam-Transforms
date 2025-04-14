@@ -7,6 +7,7 @@ setup(
     install_requires=[
         'apache-beam[dataframe,gcp,interactive]==2.64.0',
         'pandas==2.0.3',
+        'numpy==1.26.3',
         'pytz==2025.2'
     ],
 )
