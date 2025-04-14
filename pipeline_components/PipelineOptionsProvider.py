@@ -9,6 +9,7 @@ from enums.DojoBeamTransformVersion import DojoBeamTransformVersion
 
 class PipelineOptionsProvider:
     _gcp_project = None
+    _product = None
     _region = None
     _runner = BeamRunner.DIRECT.value
     _template_name = None
@@ -28,6 +29,15 @@ class PipelineOptionsProvider:
     @gcp_project.setter
     def gcp_project(self, value):
         self._gcp_project = value
+
+    @property
+    def product(self):
+        return self._product
+    
+    @product.setter
+    def product(self, value):
+        self._product = value
+    
 
     @property
     def region(self):
@@ -98,12 +108,12 @@ class PipelineOptionsProvider:
     
     def getPipelineOptions(self):
         if self.gcp_project is None or self.template_name is None or self.region is None:
-            raise ValueError('GCP project, template name and region should not be empty or None')
+            raise ValueError(f'{self.gcp_project} is None or {self.template_name} is None or {self.region} GCP project, template name and region should not be empty or None')
         
         pipeline_options = PipelineOptions(auto_unique_labels=True)
 
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
-        google_cloud_options.gcp_project = self.gcp_project
+        google_cloud_options.project = self.gcp_project
         google_cloud_options.region = self.region
         google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'temp')
         google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'staging')
@@ -113,7 +123,7 @@ class PipelineOptionsProvider:
             raise ValueError('For DataflowRunner template name is not should be empty or None')
         
         if self.template_name is not None:
-            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'template', self.template_name)
+            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-template', self.product, self.template_name)
 
         pipeline_options.view_as(StandardOptions).runner = self.runner
 
