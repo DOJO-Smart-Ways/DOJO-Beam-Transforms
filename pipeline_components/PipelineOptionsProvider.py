@@ -3,16 +3,16 @@ import apache_beam as beam
 import os
 from datetime import datetime
 from utils import gcp_utils as gcp
-from enums import DataflowMachineType
-from enums import BeamRunner
-from enums import DojoBeamTransformVersion
+from enums.DataflowMachineType import DataflowMachineType
+from enums.BeamRunner import BeamRunner
+from enums.DojoBeamTransformVersion import DojoBeamTransformVersion
 
 class PipelineOptionsProvider:
     _gcp_project = None
     _region = None
     _runner = BeamRunner.DIRECT.value
     _template_name = None
-    _container_version = DojoBeamTransformVersion.V1_0_0.value
+    _container_version = DojoBeamTransformVersion.V3_0_0.value
     _extra_package = None
     _machine_type = DataflowMachineType.N1_STANDARD_1.value
     _num_workers = 1

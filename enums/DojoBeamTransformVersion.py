@@ -8,7 +8,7 @@ class DojoBeamTransformVersion(Enum):
 
     @staticmethod
     def validate(version):
-        """Valida se o version é um valor do Enum"""
+        """Check its a valid value"""
         if not isinstance(version, DojoBeamTransformVersion):
-            raise ValueError(f"O valor {version} não é válido. Deve ser um dos: {', '.join([r.value for r in DojoBeamTransformVersion])}.")
+            raise ValueError(f"Value {version} is not valid. Should be one of: {', '.join([r.value for r in DojoBeamTransformVersion])}.")
         return version
