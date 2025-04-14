@@ -9,13 +9,13 @@ from utils import gcp_utils as gcp
 
 class TruncateBigQueryTableFn(beam.DoFn):
     def __init__(self, project, dataset, table):
-        self.project = project
+        self.gcp_project = project
         self.dataset = dataset
         self.table = table
 
     def process(self, element):
-        client = bigquery.Client(project=self.project)
-        query = f"TRUNCATE TABLE `{self.project}.{self.dataset}.{self.table}`"
+        client = bigquery.Client(project=self.gcp_project)
+        query = f"TRUNCATE TABLE `{self.gcp_project}.{self.dataset}.{self.table}`"
         client.query(query).result()
         yield f"Tabela {self.dataset}.{self.table} truncada com sucesso."
 
@@ -59,26 +59,25 @@ def bq_field_to_pyarrow_type(bq_type):
 
 class BigqueryToRaw:
     def __init__(self):
-        self.project = os.getenv('PROJECT')
+        self.gcp_project = os.getenv('GCP_PROJECT')
         self.current_date = os.getenv('CURRENT_DATE')
 
     def run(self, pipeline, identifier, dataset, table, origin_system, truncate=False):
 
         print('*********** run ' + identifier)
-        select_query = f'SELECT * FROM `{self.project}.{dataset}.{table}`'
-        pyarrow_schema = bq_to_pyarrow_schema(get_table_schema(self.project, dataset, table))
-        output_path = gcp.build_gcs_path(f'{self.project}-raw', origin_system, table, self.current_date, "output")
+        select_query = f'SELECT * FROM `{self.gcp_project}.{dataset}.{table}`'
+        pyarrow_schema = bq_to_pyarrow_schema(get_table_schema(self.gcp_project, dataset, table))
+        output_path = gcp.build_gcs_path(f'{self.gcp_project}-raw', origin_system, table, self.current_date, "output")
 
         result = (
             pipeline
             | f'Read from BigQuery {identifier}' >> ReadFromBigQuery(query=select_query, use_standard_sql=True)
             #| f'Print elements {identifier}' >> beam.Map(print)
             | f'Write to Parquet {identifier}' >> WriteToParquet(file_path_prefix=output_path,schema=pyarrow_schema, file_name_suffix='.parquet')
-            #| f'Truncate BigQuery Table {identifier}' >> beam.ParDo(TruncateBigQueryTableFn(project, dataset, table))
         )
 
         if truncate:
-            result = result | f'Truncate BigQuery Table {identifier}' >> beam.ParDo(TruncateBigQueryTableFn(self.project, dataset, table))
+            result = result | f'Truncate BigQuery Table {identifier}' >> beam.ParDo(TruncateBigQueryTableFn(self.gcp_project, dataset, table))
 
         return result
 

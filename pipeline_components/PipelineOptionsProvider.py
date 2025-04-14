@@ -103,23 +103,23 @@ class PipelineOptionsProvider:
         pipeline_options = PipelineOptions(auto_unique_labels=True)
 
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
-        google_cloud_options.gcp_project = self.gcp_gcp_project
+        google_cloud_options.gcp_project = self.gcp_project
         google_cloud_options.region = self.region
-        google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_gcp_project}-temp', 'data-flow-pipelines', 'temp')
-        google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_gcp_project}-temp', 'data-flow-pipelines', 'staging')
+        google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'temp')
+        google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'staging')
         
         
         if self.runner == BeamRunner.DATAFLOW.value and self.template_name is None:
             raise ValueError('For DataflowRunner template name is not should be empty or None')
         
         if self.template_name is not None:
-            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_gcp_project}-temp', 'data-flow-pipelines', 'template', self.template_name)
+            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'template', self.template_name)
 
         pipeline_options.view_as(StandardOptions).runner = self.runner
 
         
         worker_options = pipeline_options.view_as(WorkerOptions)
-        worker_options.sdk_container_image = f'{self.region}-docker.pkg.dev/{self.gcp_gcp_project}/dojo-beam/dojo_beam:{self.container_version}'
+        worker_options.sdk_container_image = f'{self.region}-docker.pkg.dev/{self.gcp_project}/dojo-beam/dojo_beam:{self.container_version}'
         worker_options.machine_type = self.machine_type
         worker_options.num_workers = self.num_workers
         worker_options.max_num_workers = self.max_num_workers
