@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import apache_beam as beam
 from apache_beam.io import fileio
 from apache_beam.io.parquetio import ReadAllFromParquet, WriteToParquet
-from pipeline_components.data_cleaning import KeepColumns, TrimValues, ReplaceValues, DropDuplicates
+from pipeline_components.data_cleaning import KeepColumns, TrimValues, ReplaceValues, DropDuplicates, RenameColumns
 from pipeline_components.data_enrichment import ColumnsToInteger, ColumnsToFloat, ColumnsToString, ColumnsToDate
 
 class AbstractStructuredTransform(ABC):
@@ -67,7 +67,7 @@ class AbstractStructuredTransform(ABC):
             )
         
         if self.getRenameMap() is not None and p_coll is not None:
-            p_coll = p_coll | f'Rename Columns {identifier}' >> beam.ParDo((self.getRenameMap()))
+            p_coll = p_coll | f'Rename Columns {identifier}' >> beam.ParDo(RenameColumns(self.getRenameMap()))
 
         if self.getFilters() is not None:
             expressions = []
