@@ -27,9 +27,9 @@ class TrimValues(beam.DoFn):
             try:
                 if column not in element:
                     raise ValueError(f"Column '{column}' not found in element: {element}")
-                if not isinstance(element[column], str):
-                    raise TypeError(f"Column '{column}' value is not a string: {element}")
-                element[column] = element[column].strip()
+                if element[column] and not isinstance(element[column], str):
+                    raise TypeError(f"Column '{column}' value is not a string neither None: {element}")
+                element[column] = element[column].strip() if element[column] else None
             except (ValueError, TypeError) as e:
                 yield {"error": str(e)}
                 return

@@ -56,18 +56,18 @@ def test_trim_values_non_string_value():
         {'name': ' Bob ', 'city': None}
     ]
     
-    # Define expected output for error handling
+    # Define expected output
     expected_output = [
-        {"error": "Column 'city' value is not a string: {'name': ' Alice ', 'city': 123}"},
-        {"error": "Column 'city' value is not a string: {'name': ' Bob ', 'city': None}"}
+        {"error": "Column 'city' value is not a string neither None: {'name': ' Alice ', 'city': 123}"},
+        {'name': ' Bob ', 'city': None}  # None is now considered valid
     ]
 
-    # Run the pipeline and validate the error output
+    # Run the pipeline and validate the output
     with BeamTestPipeline() as p:
         input_pcoll = p | 'Create Input' >> beam.Create(input_data)
         output_pcoll = input_pcoll | 'Apply TrimValues' >> beam.ParDo(TrimValues(columns=['city']))
 
-        # Assert the output contains the error messages
+        # Assert the output matches the expected output
         assert_that(output_pcoll, equal_to(expected_output))
 
 @pytest.mark.TrimValues
