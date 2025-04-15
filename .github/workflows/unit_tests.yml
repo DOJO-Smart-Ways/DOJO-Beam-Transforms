@@ -7,7 +7,7 @@ jobs:
   test:
     name: Utils Unit-Testing (Python ${{ matrix.python-version }})
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
