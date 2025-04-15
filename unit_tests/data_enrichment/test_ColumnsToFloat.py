@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_enrichment.ColumnsToFloat import ColumnsToFloat
+from pipeline_components.data_enrichment import ColumnsToFloat
 
 
 @pytest.mark.ColumnsToFloat

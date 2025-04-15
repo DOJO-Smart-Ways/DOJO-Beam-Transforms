@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_cleaning.DropColumns import DropColumns
+from pipeline_components.data_cleaning import DropColumns
 from unit_tests.utils.csv_reader import read_csv
 
 def test_drop_columns():

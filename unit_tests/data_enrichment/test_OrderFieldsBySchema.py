@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_enrichment.OrderFieldsBySchema import OrderFieldsBySchema
+from pipeline_components.data_enrichment import OrderFieldsBySchema
 
 @pytest.mark.OrderFieldsBySchema
 def test_order_fields_by_schema():

@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_enrichment.ColumnsToInteger import ColumnsToInteger
+from pipeline_components.data_enrichment import ColumnsToInteger
 
 @pytest.mark.ColumnsToInteger
 def test_columns_to_integer_error():

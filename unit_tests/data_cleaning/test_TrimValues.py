@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_cleaning.TrimValues import TrimValues
+from pipeline_components.data_cleaning import TrimValues
 
 @pytest.mark.TrimValues
 def test_trim_values():

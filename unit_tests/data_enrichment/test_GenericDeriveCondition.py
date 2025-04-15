@@ -2,7 +2,7 @@ import pytest
 import apache_beam as beam
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_enrichment.GenericDeriveCondition import GenericDeriveCondition
+from pipeline_components.data_enrichment import GenericDeriveCondition
 
 @pytest.mark.GenericDeriveCondition
 def test_generic_derive_condition():

@@ -3,7 +3,7 @@ import apache_beam as beam
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from apache_beam.testing.util import assert_that, equal_to
 from decimal import Decimal
-from pipeline_components.data_enrichment.ColumnsToDecimal import ColumnsToDecimal
+from pipeline_components.data_enrichment import ColumnsToDecimal
 
 @pytest.mark.ColumnsToDecimal
 def test_columns_to_decimal_converter():

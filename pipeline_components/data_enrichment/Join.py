@@ -1,8 +1,6 @@
-from enum import Enum
 from typing import List, Tuple, Dict, Any
 from apache_beam import PCollection
 import apache_beam as beam
-import logging
 
 class Join(beam.PTransform):
     """

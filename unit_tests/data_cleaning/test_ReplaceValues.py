@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_cleaning.ReplaceValues import ReplaceValues
+from pipeline_components.data_cleaning import ReplaceValues
 
 @pytest.mark.ReplaceValues
 def test_replace_values():

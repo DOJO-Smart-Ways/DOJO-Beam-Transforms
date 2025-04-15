@@ -2,7 +2,7 @@ import apache_beam as beam
 import pytest
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_cleaning.DropDuplicates import DropDuplicates
+from pipeline_components.data_cleaning import DropDuplicates
 
 @pytest.mark.DropDuplicates
 def test_drop_duplicates():

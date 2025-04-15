@@ -1,7 +1,7 @@
 import apache_beam as beam
 from apache_beam.testing.util import assert_that, equal_to
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
-from pipeline_components.data_enrichment.SplitColumn import SplitColumn
+from pipeline_components.data_enrichment import SplitColumn
 
 def test_split_column():
     # Define input data

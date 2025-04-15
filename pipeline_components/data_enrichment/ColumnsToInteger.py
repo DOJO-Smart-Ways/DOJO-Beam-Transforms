@@ -1,6 +1,13 @@
 from decimal import Decimal
 import apache_beam as beam
 
+"""
+A custom DoFn class for Apache Beam to convert Columns To Integer Type.
+
+Args:
+    columns (list of str): A list of column names whose values should be converted to integers.
+"""
+
 class ColumnsToInteger(beam.DoFn):
     def __init__(self, columns):
         """

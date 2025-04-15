@@ -2,7 +2,7 @@ import pytest
 import apache_beam as beam
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from apache_beam.testing.util import assert_that, equal_to
-from pipeline_components.data_enrichment.ColumnsToString import ColumnsToString
+from pipeline_components.data_enrichment import ColumnsToString
 
 @pytest.mark.ColumnsToString
 def test_columns_to_string_conversion():

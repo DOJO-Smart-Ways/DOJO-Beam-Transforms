@@ -2,7 +2,7 @@ import pytest
 import apache_beam as beam
 from apache_beam.testing.test_pipeline import TestPipeline as BeamTestPipeline
 from apache_beam.testing.util import assert_that, equal_to
-from pipeline_components.data_cleaning.HandleNaNValues import HandleNaNValues
+from pipeline_components.data_cleaning import HandleNaNValues
 from unit_tests.utils.csv_reader import read_csv
 
 
