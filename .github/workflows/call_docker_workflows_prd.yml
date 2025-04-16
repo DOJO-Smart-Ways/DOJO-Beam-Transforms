@@ -10,7 +10,7 @@ jobs:
     if: github.event.pull_request.merged == true
     strategy:
       matrix:
-        environment: [us-multi, emea-multi, ga]
+        environment: [ga]
     uses: ./.github/workflows/docker_uploader.yml
     with:
       environment: ${{ matrix.environment }}

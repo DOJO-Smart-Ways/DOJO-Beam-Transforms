@@ -11,7 +11,7 @@ class BeamRunner(Enum):
 
     @staticmethod
     def validate(runner):
-        """Valida se o runner é um valor do Enum"""
-        if not isinstance(runner, BeamRunner):
-            raise ValueError(f"O valor {runner} não é válido. Deve ser um dos: {', '.join([r.value for r in BeamRunner])}.")
+        """Check if  runner is valid Enum"""
+        if not isinstance(runner, BeamRunner) and runner not in BeamRunner._value2member_map_:
+            raise ValueError(f"The value of runner: {runner} is not valid. Should be one of: {', '.join([r.value for r in BeamRunner])}.")
         return runner
