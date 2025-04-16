@@ -17,7 +17,7 @@ class TruncateBigQueryTableFn(beam.DoFn):
         client = bigquery.Client(project=self.gcp_project)
         query = f"TRUNCATE TABLE `{self.gcp_project}.{self.dataset}.{self.table}`"
         client.query(query).result()
-        yield f"Tabela {self.dataset}.{self.table} truncada com sucesso."
+        yield f"Table {self.dataset}.{self.table} truncated."
 
 
 def get_table_schema(project, dataset, table):
@@ -54,7 +54,7 @@ def bq_field_to_pyarrow_type(bq_type):
     elif bq_type == 'BYTES':
         return pa.binary()
     else:
-        raise ValueError(f"Tipo não suportado: {bq_type}")
+        raise ValueError(f"Not Allowed type: {bq_type}")
     
 
 class BigqueryToRaw:
@@ -62,12 +62,17 @@ class BigqueryToRaw:
         self.gcp_project = os.getenv('GCP_PROJECT')
         self.current_date = os.getenv('CURRENT_DATE')
 
-    def run(self, pipeline, identifier, dataset, table, origin_system, truncate=False):
+    def run(self, pipeline: beam.PCollection, identifier: str, dataset: str, table: str, origin_system: str, date_column: str = None, truncate: bool = False):
 
         print('*********** run ' + identifier)
+
         select_query = f'SELECT * FROM `{self.gcp_project}.{dataset}.{table}`'
+        if date_column is not None:
+            select_query += f" WHERE CAST({date_column} AS DATE) = CURRENT_DATE"
+
         pyarrow_schema = bq_to_pyarrow_schema(get_table_schema(self.gcp_project, dataset, table))
         output_path = gcp.build_gcs_path(f'{self.gcp_project}-raw', origin_system, table, self.current_date, "output")
+
 
         result = (
             pipeline
