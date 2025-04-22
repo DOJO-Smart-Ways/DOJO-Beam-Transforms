@@ -123,7 +123,7 @@ class PipelineOptionsProvider:
             raise ValueError('For DataflowRunner template name is not should be empty or None')
         
         if self.template_name is not None:
-            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-template', self.product, self.template_name)
+            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-templates', self.product, self.template_name)
 
         pipeline_options.view_as(StandardOptions).runner = self.runner
 
