@@ -62,16 +62,17 @@ class BigqueryToRaw:
         self.gcp_project = os.getenv('GCP_PROJECT')
         self.current_date = os.getenv('CURRENT_DATE')
 
-    def run(self, pipeline: beam.PCollection, identifier: str, dataset: str, table: str, origin_system: str, date_column: str = None, truncate: bool = False):
+    def run(self, pipeline: beam.PCollection, identifier: str, dataset: str, table: str, origin_system: str, date_column: str = None, execution_date: str = None, truncate: bool = False):
 
         print('*********** run ' + identifier)
+        execution_date = execution_date if execution_date else self.current_date
 
         select_query = f'SELECT * FROM `{self.gcp_project}.{dataset}.{table}`'
         if date_column is not None:
-            select_query += f" WHERE CAST({date_column} AS DATE) = CURRENT_DATE"
+            select_query += f" WHERE CAST({date_column} AS DATE) = {execution_date}"
 
         pyarrow_schema = bq_to_pyarrow_schema(get_table_schema(self.gcp_project, dataset, table))
-        output_path = gcp.build_gcs_path(f'{self.gcp_project}-raw', origin_system, table, self.current_date, "output")
+        output_path = gcp.build_gcs_path(f'{self.gcp_project}-raw', origin_system, table, execution_date, "output")
 
 
         result = (

@@ -18,6 +18,7 @@ class PipelineOptionsProvider:
     _machine_type = DataflowMachineType.N1_STANDARD_1.value
     _num_workers = 1
     _max_num_workers = 1
+    _execution_date = None  
     
     def __init__(self):
         pass
@@ -106,6 +107,14 @@ class PipelineOptionsProvider:
     def max_num_workers(self, value):
         self._max_num_workers = value
     
+    @property
+    def execution_date(self):
+        return self._execution_date
+
+    @execution_date.setter
+    def execution_date(self, value):
+        self._execution_date = value
+    
     def getPipelineOptions(self):
         if self.gcp_project is None or self.template_name is None or self.region is None:
             raise ValueError(f'{self.gcp_project} is None or {self.template_name} is None or {self.region} GCP project, template name and region should not be empty or None')
@@ -136,11 +145,14 @@ class PipelineOptionsProvider:
 
         setup_options = pipeline_options.view_as(SetupOptions)
         setup_options.sdk_location = 'container'
-        #setup_options.extra_packages = ['gs://nidec-ga-etl/digital-helpchain-dependencies.zip']
+
         if self.extra_package is not None:
             setup_options.extra_packages = [self.extra_package]
 
         current_date = datetime.now().strftime('%Y%m%d')
         os.environ['CURRENT_DATE'] = current_date
+
+        if self.execution_date:
+            pipeline_options.view_as(PipelineOptions).execution_date = self.execution_date
             
         return beam.Pipeline(options=pipeline_options)
