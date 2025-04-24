@@ -7,6 +7,19 @@ from enums.DataflowMachineType import DataflowMachineType
 from enums.BeamRunner import BeamRunner
 from enums.DojoBeamTransformVersion import DojoBeamTransformVersion
 
+
+class CustomPipelineOptions(PipelineOptions):
+
+    @classmethod
+    def _add_argparse_args(cls, parser):
+        
+        parser.add_value_provider_argument(
+            '--execution_date',
+            type=str,
+            help='Execution date expected in YYYY-MM-DD'
+        )
+
+
 class PipelineOptionsProvider:
     _gcp_project = None
     _product = None
@@ -119,7 +132,7 @@ class PipelineOptionsProvider:
         if self.gcp_project is None or self.template_name is None or self.region is None:
             raise ValueError(f'{self.gcp_project} is None or {self.template_name} is None or {self.region} GCP project, template name and region should not be empty or None')
         
-        pipeline_options = PipelineOptions(auto_unique_labels=True)
+        pipeline_options = CustomPipelineOptions(auto_unique_labels=True)
 
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
         google_cloud_options.project = self.gcp_project
