@@ -70,21 +70,12 @@ class AbstractStructuredTransform(ABC):
             p_coll = p_coll | f'Rename Columns {identifier}' >> beam.ParDo(RenameColumns(self.getRenameMap()))
 
         if self.getFilters() is not None:
-            expressions = []
-            for condition in self.getFilters():
-                key = condition["key"]
-                cond = condition["condition"]
-                value = condition["value"]
+            filter_functions = self.getFilters()
 
-                if (condition["condition"] == 'startswith'):
-                    expressions.append(f"record['{key}'].{cond}({value})")
-                else:
-                    expressions.append(f"record['{key}'] {cond} {value}")
-            condition_expression = " and ".join(expressions)
+            if not callable(filter_functions):
+                raise TypeError(f"Filter functions must be a lambda function. Got {type(filter_functions)} instead.")
 
-            #print(condition_expression)
-
-            p_coll = p_coll | f'FILTER by dynamic conditions {identifier}' >> beam.Filter(lambda record: record is not None and isinstance(record, dict) and eval(condition_expression))
+            p_coll = p_coll | f'Filter By Custom rules {identifier}' >> beam.Filter(filter_functions)
 
         if self.getKeepColumns() is not None and p_coll is not None:
             p_coll = p_coll | f'Keep Columns {identifier}' >> beam.ParDo(KeepColumns(self.getKeepColumns()))
