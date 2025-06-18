@@ -9,13 +9,13 @@ class DataflowMachineType(Enum):
     N1_STANDARD_32 = "n1-standard-32"  # 32 vCPUs, 120 GB de memória
     N1_STANDARD_64 = "n1-standard-64"  # 64 vCPUs, 240 GB de memória
     N1_STANDARD_96 = "n1-standard-96"  # 96 vCPUs, 360 GB de memória
-    
+
     N1_HIGHMEM_2 = "n1-highmem-2"    # 2 vCPUs, 13 GB de memória
     N1_HIGHCPU_4 = "n1-highcpu-4"    # 4 vCPUs, 3.6 GB de memória
-    
+
     N2_STANDARD_2 = "n2-standard-2"  # 2 vCPUs, 8 GB de memória
     N2_HIGHCPU_4 = "n2-highcpu-4"    # 4 vCPUs, 4 GB de memória
-    
+
     E2_STANDARD_4 = "e2-standard-4"  # 4 vCPUs, 16 GB de memória
     E2_HIGHMEM_2 = "e2-highmem-2"    # 2 vCPUs, 16 GB de memória
 
@@ -23,7 +23,18 @@ class DataflowMachineType(Enum):
 
     @staticmethod
     def validate(machine_type):
-        """Valida se o DataflowMachineType é um valor do Enum"""
-        if not isinstance(machine_type, DataflowMachineType):
-            raise ValueError(f"O valor {machine_type} não é válido. Deve ser um dos: {', '.join([r.value for r in DataflowMachineType])}.")
-        return machine_type
+        """
+        Aceita tanto o Enum quanto a string do valor.
+        Retorna sempre a string correspondente ao valor do Enum.
+        """
+        if isinstance(machine_type, DataflowMachineType):
+            return machine_type.value
+        elif isinstance(machine_type, str):
+            try:
+                return DataflowMachineType(machine_type).value
+            except ValueError:
+                pass
+        raise ValueError(
+            f"O valor {machine_type} não é válido. "
+            f"Deve ser um dos: {', '.join([r.value for r in DataflowMachineType])}."
+        )
