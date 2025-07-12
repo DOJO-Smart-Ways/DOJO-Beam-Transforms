@@ -3,9 +3,9 @@ import apache_beam as beam
 import os
 from datetime import datetime
 from utils import gcp_utils as gcp
-from pipelines.commons.DataflowMachineType import DataflowMachineType
-from pipelines.commons.BeamRunner import BeamRunner
-from pipelines.commons.DojoBeamTransformVersion import DojoBeamTransformVersion
+from enums.DataflowMachineType import DataflowMachineType
+from enums.BeamRunner import BeamRunner
+from enums.DojoBeamTransformVersion import DojoBeamTransformVersion
 
 class PipelineOptionsProvider:
     _project = os.getenv('PROJECT')
