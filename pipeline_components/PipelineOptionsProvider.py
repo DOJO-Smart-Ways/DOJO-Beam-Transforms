@@ -166,6 +166,7 @@ class PipelineOptionsProvider:
         os.environ['CURRENT_DATE'] = current_date
 
         if self.execution_date:
-            pipeline_options.view_as(PipelineOptions).execution_date = self.execution_date
-            
-        return beam.Pipeline(options=pipeline_options)
+            pipeline_options.view_as(CustomPipelineOptions).execution_date = self.execution_date
+        user_options =  pipeline_options.view_as(CustomPipelineOptions)
+
+        return beam.Pipeline(options=pipeline_options), user_options
