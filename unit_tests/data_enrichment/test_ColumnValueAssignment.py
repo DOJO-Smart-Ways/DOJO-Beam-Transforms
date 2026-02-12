@@ -29,17 +29,15 @@ def test_column_value_assignment():
         assert_that(output_pcoll, equal_to(expected_output))
 
 @pytest.mark.ColumnValueAssignment
-def test_column_value_assignment_overwrite():
-    input_data = [
-        {'id': 1, 'name': 'Alice', 'status': 'inactive'},
-        {'id': 2, 'name': 'Bob', 'status': 'inactive'}
-    ]
-
-    # Run the pipeline and expect a ValueError
+def test_column_value_assignment_overwrite_dofn_direct():
+    input_element = {'id': 1, 'name': 'Alice', 'status': 'inactive'}
+    
+    # Instancia o DoFn diretamente
+    dofn = ColumnValueAssignment(value='active', new_column='status')
+    
+    # Simula o método process. Como é um generator, usamos list() para forçar a execução
     with pytest.raises(ValueError, match=r"Error: Column 'status' already exists in element: .*"):
-        with BeamTestPipeline() as p:
-            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-            _ = input_pcoll | 'Assign Value' >> beam.ParDo(ColumnValueAssignment(value='active', new_column='status'))
+        list(dofn.process(input_element))
 
 
 @pytest.mark.ColumnValueAssignment
@@ -51,14 +49,13 @@ def test_column_value_assignment_invalid_value_type():
 
 @pytest.mark.ColumnValueAssignment
 def test_column_value_assignment_non_dict_element():
-    # Input data contendo um elemento que não é um dicionário
-    input_data = [
-        ['not', 'a', 'dictionary'],  # Elemento inválido
-        {'id': 1, 'name': 'Alice'}  # Elemento válido
-    ]
+    # Input data inválido (lista em vez de dict)
+    element_invalido = ['not', 'a', 'dictionary']
 
-    # Run the pipeline and expect a ValueError
+    # 1. Instancie sua classe DoFn diretamente
+    dofn = ColumnValueAssignment(value='active', new_column='status')
+
+    # 2. Execute o método process() manualmente.
+    # Usamos list() porque o process retorna um generator (yield) e precisamos consumi-lo para o erro estourar.
     with pytest.raises(ValueError, match=r"Error: element is not a dictionary: .*"):
-        with BeamTestPipeline() as p:
-            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-            _ = input_pcoll | 'Assign Value' >> beam.ParDo(ColumnValueAssignment(value='active', new_column='status'))
+        list(dofn.process(element_invalido))

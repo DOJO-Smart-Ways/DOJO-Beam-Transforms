@@ -6,3 +6,7 @@ __pycache__/
 .venv/
 .vscode/
 .idea/
+venv/
+dojo_beam_transforms.egg-info/
+dojo_beam_transforms.egg-info
+build/
