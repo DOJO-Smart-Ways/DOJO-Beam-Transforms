@@ -1,2 +1,5 @@
 pytest
-apache-beam[gcp]
+apache-beam[gcp]>=2.61.0
+pandas>=2.1.0
+openpyxl>=3.0.0
+pytz>=2021.3
