@@ -8,7 +8,7 @@ jobs:
   ReuseableMatrixJobForDeployment:
     strategy:
       matrix:
-        environment: [dev]
+        environment: [dev-ga]
     uses: ./.github/workflows/docker_uploader.yml
     with:
       environment: ${{ matrix.environment }}
