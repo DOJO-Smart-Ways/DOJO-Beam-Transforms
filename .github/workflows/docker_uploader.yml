@@ -131,6 +131,27 @@ jobs:
         run: docker build --file Dockerfile --tag dojo_beam:${{ steps.package_infos.outputs.version }} .
         working-directory: .
 
+      - name: Configure Docker for Artifact Registry
+        shell: bash
+        env:
+          REGION: ${{ secrets.REGION }}
+        run: |
+          REGION="$(printf '%s' "$REGION" | tr -d '\r\n')"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Debug Docker auth
+        shell: bash
+        env:
+          REGION: ${{ secrets.REGION }}
+        run: |
+          REGION="$(printf '%s' "$REGION" | tr -d '\r\n')"
+          gcloud auth list
+          gcloud config get-value account
+          cat "$HOME/.docker/config.json"
+          docker logout "https://${REGION}-docker.pkg.dev" || true
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          cat "$HOME/.docker/config.json"        
+
       - name: Tag image
         run: docker tag dojo_beam:${{ steps.package_infos.outputs.version }} ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/dojo-beam/dojo_beam:${{ steps.package_infos.outputs.version }}
 
