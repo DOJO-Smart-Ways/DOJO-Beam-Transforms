@@ -4,12 +4,19 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   ReuseableMatrixJobForDeployment:
     strategy:
       matrix:
         environment: [dev-ga]
     uses: ./.github/workflows/docker_uploader.yml
+    permissions:
+      contents: read
+      id-token: write
     with:
       environment: ${{ matrix.environment }}
     secrets: inherit
