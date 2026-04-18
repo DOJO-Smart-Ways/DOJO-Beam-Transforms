@@ -13,7 +13,7 @@ def test_columns_to_integer_error():
     ]
 
     # Run the pipeline and expect an error
-    with pytest.raises(ValueError, match="Error converting column 'age' to Integer"):
+    with pytest.raises(RuntimeError, match="Error converting column 'age' to Integer"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             output_pcoll = input_pcoll | 'Convert to Integer' >> beam.ParDo(ColumnsToInteger(columns=['age']))
@@ -41,7 +41,7 @@ def test_columns_to_integer_missing_column():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match=r"Column 'quantity' not found in the input element: .*"):
+    with pytest.raises(RuntimeError, match=r"Column 'quantity' not found in the input element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert to Integer' >> beam.ParDo(ColumnsToInteger(columns=['price', 'quantity']))

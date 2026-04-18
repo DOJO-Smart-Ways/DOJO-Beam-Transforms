@@ -47,7 +47,7 @@ def test_generic_derive_condition_complex_target_column_already_exists():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match="Target column 'derived_field' already exists in the element: .*"):
+    with pytest.raises(RuntimeError, match="Target column 'derived_field' already exists in the element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply GenericDeriveConditionComplex' >> beam.ParDo(
@@ -68,7 +68,7 @@ def test_generic_derive_condition_complex_error_in_condition():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match="Error processing element .*"):
+    with pytest.raises(RuntimeError, match="Error processing element .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply GenericDeriveConditionComplex' >> beam.ParDo(

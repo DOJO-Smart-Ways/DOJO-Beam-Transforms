@@ -36,7 +36,7 @@ def test_columns_to_date_invalid_format():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match="Error: None of the input formats matched for column 'date1' with value 'invalid-date'"):
+    with pytest.raises(RuntimeError, match="Error: None of the input formats matched for column 'date1' with value 'invalid-date'"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert Dates' >> beam.ParDo(
@@ -52,7 +52,7 @@ def test_columns_to_date_missing_column():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match="Column 'date2' not found in the input element"):
+    with pytest.raises(RuntimeError, match="Column 'date2' not found in the input element"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert Dates' >> beam.ParDo(

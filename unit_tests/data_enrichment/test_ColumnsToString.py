@@ -37,7 +37,7 @@ def test_columns_to_string_missing_column():
     ]
     #f Run the pipeline
 
-    with pytest.raises(KeyError, match=r"Column 'non_existent_column' not found in the input element: .*"):
+    with pytest.raises(RuntimeError, match=r"Column 'non_existent_column' not found in the input element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert to String' >> beam.ParDo(ColumnsToString(columns=['non_existent_column']))
