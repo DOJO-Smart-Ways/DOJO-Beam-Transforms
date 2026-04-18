@@ -66,7 +66,7 @@ def test_missing_column_in_operands():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match="Missing column in operation: .*"):
+    with pytest.raises(RuntimeError, match="Missing column in operation: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply Operation' >> beam.ParDo(GenericArithmeticOperation(operations))
@@ -89,7 +89,7 @@ def test_target_column_already_exists():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match="Target column 'COLUMN_4' already exists in the element: .*"):
+    with pytest.raises(RuntimeError, match="Target column 'COLUMN_4' already exists in the element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply Operation' >> beam.ParDo(GenericArithmeticOperation(operations))

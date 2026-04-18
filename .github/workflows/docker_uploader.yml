@@ -7,13 +7,19 @@ on:
         required: true
         type: string
     secrets:
-      ARTIFACT_REGISTRY_KEY:
+      ARTIFACT_REGISTRY_SA:
         required: true
       PROJECT_ID:
         required: true
       REGION:
         required: true
-
+      WIF_PROVIDER:
+        required: true
+        
+permissions:
+  contents: read
+  id-token: write
+  
 jobs:
   build-push-artifact:
     runs-on: ubuntu-latest
@@ -30,10 +36,86 @@ jobs:
       - name: Print extracted version (for debugging)
         run: echo "Extracted version is ${{ steps.package_infos.outputs.VERSION }}"
 
+      - name: Debug WIF inputs and GitHub OIDC token
+        shell: bash
+        env:
+          WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+          ARTIFACT_REGISTRY_SA: ${{ secrets.ARTIFACT_REGISTRY_SA }}
+        run: |
+          set -euo pipefail
+
+          echo "Has ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+          echo "Has ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}"
+
+          python - <<'PY'
+          import os
+
+          wif = os.environ.get("WIF_PROVIDER", "")
+          sa = os.environ.get("ARTIFACT_REGISTRY_SA", "")
+
+          def mask(v):
+              if not v:
+                  return "<empty>"
+              if len(v) <= 12:
+                  return "*" * len(v)
+              return f"{v[:18]}...{v[-18:]}"
+
+          print("WIF_PROVIDER:", mask(wif))
+          print("ARTIFACT_REGISTRY_SA:", mask(sa))
+
+          expected_prefix = "projects/"
+          expected_middle = "/locations/global/workloadIdentityPools/"
+          expected_suffix = "/providers/"
+
+          print("WIF_PROVIDER has expected format:",
+                wif.startswith(expected_prefix)
+                and expected_middle in wif
+                and expected_suffix in wif)
+          PY
+
+          OIDC_URL="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${WIF_PROVIDER}"
+          RAW="$(curl -sS -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${OIDC_URL}")"
+
+          python - <<'PY' <<<"$RAW"
+          import sys, json, base64
+
+          raw = sys.stdin.read()
+          data = json.loads(raw)
+          token = data.get("value")
+
+          if not token:
+              print("OIDC response did not contain token:")
+              print(json.dumps(data, indent=2))
+              raise SystemExit(1)
+
+          parts = token.split(".")
+          if len(parts) != 3:
+              print("OIDC token is not a JWT")
+              raise SystemExit(1)
+
+          payload = parts[1] + "=" * (-len(parts[1]) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload.encode()).decode())
+
+          interesting = {
+              "iss": claims.get("iss"),
+              "aud": claims.get("aud"),
+              "sub": claims.get("sub"),
+              "repository": claims.get("repository"),
+              "repository_owner": claims.get("repository_owner"),
+              "ref": claims.get("ref"),
+              "job_workflow_ref": claims.get("job_workflow_ref"),
+          }
+
+          print("OIDC claims:")
+          print(json.dumps(interesting, indent=2))
+          PY
+
+
       - name: Auth GCP Project
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.ARTIFACT_REGISTRY_KEY }}'
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.ARTIFACT_REGISTRY_SA }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1

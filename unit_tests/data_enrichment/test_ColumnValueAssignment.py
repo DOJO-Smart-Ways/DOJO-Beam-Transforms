@@ -36,7 +36,7 @@ def test_column_value_assignment_overwrite():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match=r"Error: Column 'status' already exists in element: .*"):
+    with pytest.raises(RuntimeError, match=r"Error: Column 'status' already exists in element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Assign Value' >> beam.ParDo(ColumnValueAssignment(value='active', new_column='status'))
@@ -58,7 +58,7 @@ def test_column_value_assignment_non_dict_element():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match=r"Error: element is not a dictionary: .*"):
+    with pytest.raises(RuntimeError, match=r"Error: element is not a dictionary: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Assign Value' >> beam.ParDo(ColumnValueAssignment(value='active', new_column='status'))

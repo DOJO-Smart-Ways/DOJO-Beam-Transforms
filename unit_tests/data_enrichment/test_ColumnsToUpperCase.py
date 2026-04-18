@@ -44,7 +44,7 @@ def test_columns_to_uppercase_missing_column():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match=r"Column 'non_existent_column' not found in the input element: .*"):
+    with pytest.raises(RuntimeError, match=r"Column 'non_existent_column' not found in the input element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert to Uppercase' >> beam.ParDo(ColumnsToUpperCase(columns=['non_existent_column']))

@@ -46,7 +46,7 @@ def test_merge_columns_target_column_already_exists():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match="Target column 'merged_field' already exists in the element: .*"):
+    with pytest.raises(RuntimeError, match="Target column 'merged_field' already exists in the element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply MergeColumns' >> beam.ParDo(MergeColumns(params))
@@ -65,7 +65,7 @@ def test_merge_columns_missing_source_column():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match="Missing column 'field2' in the element: .*"):
+    with pytest.raises(RuntimeError, match="Missing column 'field2' in the element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply MergeColumns' >> beam.ParDo(MergeColumns(params))

@@ -38,7 +38,7 @@ def test_columns_to_float_invalid_value():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match=r"Error converting on column 'price' to Float. Element .*"):
+    with pytest.raises(RuntimeError, match=r"Error converting on column 'price' to Float. Element .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert to Float' >> beam.ParDo(ColumnsToFloat(columns=['price', 'quantity']))
@@ -52,7 +52,7 @@ def test_columns_to_float_missing_column():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match=r"Column 'quantity' not found in the input element: .*"):
+    with pytest.raises(RuntimeError, match=r"Column 'quantity' not found in the input element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Convert to Float' >> beam.ParDo(ColumnsToFloat(columns=['price', 'quantity']))
