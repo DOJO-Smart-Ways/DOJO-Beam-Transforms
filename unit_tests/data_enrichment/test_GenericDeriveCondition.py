@@ -41,7 +41,7 @@ def test_generic_derive_condition_missing_source_column():
     ]
 
     # Run the pipeline and expect a KeyError
-    with pytest.raises(KeyError, match="Source column 'field1' not found in the element: .*"):
+    with pytest.raises(RuntimeError, match="Source column 'field1' not found in the element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply GenericDeriveCondition' >> beam.ParDo(
@@ -61,7 +61,7 @@ def test_generic_derive_condition_target_column_already_exists():
     ]
 
     # Run the pipeline and expect a ValueError
-    with pytest.raises(ValueError, match="Target column 'derived_field' already exists in the element: .*"):
+    with pytest.raises(RuntimeError, match="Target column 'derived_field' already exists in the element: .*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             _ = input_pcoll | 'Apply GenericDeriveCondition' >> beam.ParDo(

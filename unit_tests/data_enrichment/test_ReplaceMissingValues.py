@@ -42,7 +42,7 @@ def test_replace_missing_column():
     ]
 
     # Run the pipeline
-    with pytest.raises(KeyError, match=r"Column 'field2' not found in the input element: \{'field1': 'value1'\}.*"):
+    with pytest.raises(RuntimeError, match=r"Column 'field2' not found in the input element: \{'field1': 'value1'\}.*"):
         with BeamTestPipeline() as p:
             input_pcoll = p | 'Create Input' >> beam.Create(input_data)
             output_pcoll = input_pcoll | 'Apply ReplaceMissingValues' >> beam.ParDo(
