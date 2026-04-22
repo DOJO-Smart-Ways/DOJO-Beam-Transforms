@@ -44,8 +44,8 @@ import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 
 from pipeline_components.input_file import read_csvs_union
-from pipeline_components import data_cleaning as dc
-from pipeline_components import data_enrichment as de
+from pipeline_components import data_cleaning
+from pipeline_components import data_enrichment
 
 
 pipeline_options = PipelineOptions()
@@ -61,20 +61,20 @@ with beam.Pipeline(options=pipeline_options) as pipeline:
     cleaned = (
         records
         | "Keep Relevant Columns" >> beam.ParDo(
-            dc.KeepColumns(["order_id", "status", "amount"])
+            KeepColumns(["order_id", "status", "amount"])
         )
         | "Normalize Status" >> beam.ParDo(
-            dc.ReplaceValues(["status"], {"": "UNKNOWN", None: "UNKNOWN"})
+            ReplaceValues(["status"], {"": "UNKNOWN", None: "UNKNOWN"})
         )
         | "Clean Amount Regex" >> beam.ParDo(
-            dc.ReplaceRegex(["amount"], [(r",", ".")])
+            ReplaceRegex(["amount"], [(r",", ".")])
         )
     )
 
     enriched = (
         cleaned
-        | "Cast Amount To Float" >> beam.ParDo(de.ColumnsToFloat(["amount"]))
-        | "Force Order Id As String" >> beam.ParDo(de.ColumnsToString(["order_id"]))
+        | "Cast Amount To Float" >> beam.ParDo(ColumnsToFloat(["amount"]))
+        | "Force Order Id As String" >> beam.ParDo(ColumnsToString(["order_id"]))
     )
 
     _ = enriched | "Write Output" >> beam.io.WriteToText("gs://my-bucket/output/orders")
