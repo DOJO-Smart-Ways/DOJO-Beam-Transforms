@@ -42,19 +42,13 @@ def test_replace_values_column_not_found():
     # Define replacements
     replacements = {'inactive': 'disabled', 'active': 'enabled'}
     
-    # Define expected output for error handling
-    expected_output = [
-        {"error": "Column 'non_existent_column' not found in element: {'status': 'inactive', 'city': 'New York'}"},
-        {"error": "Column 'non_existent_column' not found in element: {'status': 'active', 'city': 'Los Angeles'}"}
-    ]
-
-    # Run the pipeline and validate the error output
-    with BeamTestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply ReplaceValues' >> beam.ParDo(ReplaceValues(columns=['non_existent_column'], replacements=replacements))
-
-        # Assert the output contains the error messages
-        assert_that(output_pcoll, equal_to(expected_output))
+    # Run the pipeline and validate it fails with the expected message
+    with pytest.raises(RuntimeError, match=r"Column 'non_existent_column' not found in element: .*"):
+        with BeamTestPipeline() as p:
+            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            _ = input_pcoll | 'Apply ReplaceValues' >> beam.ParDo(
+                ReplaceValues(columns=['non_existent_column'], replacements=replacements)
+            )
 
 @pytest.mark.ReplaceValues
 def test_replace_values_invalid_columns_type():

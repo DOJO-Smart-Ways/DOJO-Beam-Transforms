@@ -9,6 +9,7 @@ class DropDuplicates(beam.DoFn):
     """
     def __init__(self, columns=None):
         self.columns = columns if columns else []
+        self.seen = set()
 
         # Validate columns during initialization
         if not isinstance(self.columns, list):
@@ -16,7 +17,7 @@ class DropDuplicates(beam.DoFn):
         if not all(isinstance(col, str) for col in self.columns):
             raise ValueError("All columns must be strings.")
 
-    def process(self, element, seen=set()):
+    def process(self, element):
         try:
             # Check if element is a dictionary
             if not isinstance(element, dict):
@@ -32,11 +33,11 @@ class DropDuplicates(beam.DoFn):
                 dedup_key = tuple(element.items())
 
             # Check if the deduplication key has already been seen
-            if dedup_key in seen:
+            if dedup_key in self.seen:
                 return
-            seen.add(dedup_key)
+            self.seen.add(dedup_key)
 
             yield element
 
-        except (TypeError, ValueError) as e:
-            yield {"error": str(e)}
+        except (TypeError, ValueError):
+            raise

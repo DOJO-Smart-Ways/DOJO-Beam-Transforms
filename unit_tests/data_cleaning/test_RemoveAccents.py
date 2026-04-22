@@ -55,18 +55,11 @@ def test_remove_accents_column_not_found():
         {'name': 'Alice', 'city': 'São Paulo'}
     ]
     
-    # Define expected output for error handling
-    expected_output = [
-        {"error": "Column 'non_existent_column' not found in element: {'name': 'Alice', 'city': 'São Paulo'}"}
-    ]
-
-    # Run the pipeline and validate the error output
-    with BeamTestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['non_existent_column']))
-
-        # Assert the output contains the error message
-        assert_that(output_pcoll, equal_to(expected_output))
+    # Run the pipeline and validate it fails with the expected message
+    with pytest.raises(RuntimeError, match=r"Column 'non_existent_column' not found in element: .*"):
+        with BeamTestPipeline() as p:
+            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            _ = input_pcoll | 'Apply RemoveAccents' >> beam.ParDo(RemoveAccents(columns=['non_existent_column']))
 
 @pytest.mark.RemoveAccents
 def test_remove_accents_single_column():

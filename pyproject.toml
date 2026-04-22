@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dojo-beam-transforms"
-version = "3.0.0"
+version = "3.1.0"
 description = "New Classes and AbstractPipelines"
 authors = ["Gustavo Bandeira da Silva and Giovani Marin"]
 

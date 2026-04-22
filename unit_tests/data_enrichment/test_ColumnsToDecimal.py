@@ -33,28 +33,32 @@ def test_columns_to_decimal_converter():
 
 @pytest.mark.ColumnsToDecimal
 def test_columns_to_decimal_missing_column():
-    # Input data
-    input_data = [
-        {'price': '12.34'}  # Falta a coluna 'quantity'
-    ]
+    # Input data faltando a coluna 'quantity'
+    input_element = {'price': '12.34'}
+    
+    # 1. Instancie o DoFn
+    dofn = ColumnsToDecimal(columns=['price', 'quantity'])
+    
+    # 2. Execute o método process() manualmente dentro do pytest.raises
+    # O list() é OBRIGATÓRIO para consumir o generator e disparar o erro.
+    with pytest.raises(KeyError, match=r"Column 'quantity' not found in the input element"):
+        list(dofn.process(input_element))
 
     # Run the pipeline and expect a KeyError
     with pytest.raises(RuntimeError, match="Column 'quantity' not found in the input element"):
         with BeamTestPipeline() as p:
-            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            input_pcoll = p | 'Create Input' >> beam.Create([input_element])
             _ = input_pcoll | 'Convert to Decimal' >> beam.ParDo(ColumnsToDecimal(columns=['price', 'quantity']))
 
 @pytest.mark.ColumnsToDecimal
 def test_columns_to_decimal_invalid_value():
-    # Input data
-    input_data = [
-        {'price': 'invalid', 'quantity': '10'}  # Valor inválido para 'price'
-    ]
+    # Input data (um único elemento para teste unitário)
+    input_element = {'price': 'invalid', 'quantity': '10'} 
     
     # Run the pipeline and expect a ValueError
     with pytest.raises(RuntimeError, match=r"Error converting on column 'price' to Decimal. Element .*"):
         with BeamTestPipeline() as p:
-            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            input_pcoll = p | 'Create Input' >> beam.Create([input_element])
             _ = input_pcoll | 'Convert to Decimal' >> beam.ParDo(ColumnsToDecimal(columns=['price', 'quantity']))
 
    

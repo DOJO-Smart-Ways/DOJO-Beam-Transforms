@@ -38,9 +38,6 @@ class KeepColumns(beam.DoFn):
         Yields:
             A dictionary containing only the specified columns to be kept.
         """
-        try:
-            # Keep only the specified columns
-            filtered_element = {key: value for key, value in element.items() if key in self.columns}
-            yield filtered_element
-        except Exception as e:
-            yield {"error": str(e)}
+        # Keep only the specified columns
+        filtered_element = {key: value for key, value in element.items() if key in self.columns}
+        yield filtered_element

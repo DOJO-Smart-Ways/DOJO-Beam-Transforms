@@ -35,18 +35,11 @@ def test_drop_duplicates_non_dict_element():
         ['invalid', 'element']
     ]
     
-    # Define expected output for error handling
-    expected_output = [
-        {'error': "Element is not a dictionary: ['invalid', 'element']"}
-    ]
-
-    # Run the pipeline and validate the error output
-    with BeamTestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))
-
-        # Assert the output contains the error message
-        assert_that(output_pcoll, equal_to(expected_output))
+    # Run the pipeline and validate it fails with the expected message
+    with pytest.raises(RuntimeError, match=r"Element is not a dictionary: .*"):
+        with BeamTestPipeline() as p:
+            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            _ = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))
 
 @pytest.mark.DropDuplicates
 def test_drop_duplicates_missing_column():
@@ -56,15 +49,8 @@ def test_drop_duplicates_missing_column():
         {'id': 2}  # Missing 'name'
     ]
     
-    # Define expected output for error handling
-    expected_output = [
-        {'error': "Column 'name' not found in element: {'id': 2}"}
-    ]
-
-    # Run the pipeline and validate the error output
-    with BeamTestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))
-
-        # Assert the output contains the error message
-        assert_that(output_pcoll, equal_to(expected_output))
+    # Run the pipeline and validate it fails with the expected message
+    with pytest.raises(RuntimeError, match=r"Column 'name' not found in element: .*"):
+        with BeamTestPipeline() as p:
+            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            _ = input_pcoll | 'Apply DropDuplicates' >> beam.ParDo(DropDuplicates(columns=['id', 'name']))

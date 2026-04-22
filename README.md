@@ -1,172 +1,172 @@
 # DOJO-Beam-Transforms
 
-Welcome to `DOJO-Beam-Transforms`, a repository dedicated to sharing advanced Apache Beam transformations, custom `DoFn` classes, and best practices for scalable data processing, curated by the team at DOJO-Smart-Ways.
+`DOJO-Beam-Transforms` is a reusable collection of Apache Beam transforms and utility components for data cleaning, enrichment, and ingestion workflows.
+
+## Current Release
+
+- Package: `dojo-beam-transforms`
+- Current release: `3.1.0`
+- Python target: `3.12`
+
+## Compatibility Matrix (v3.1.0)
+
+### Apache Beam SDK
+
+- `apache-beam[dataframe,gcp,interactive]==2.72.0`
+
+### Core Dependencies
+
+- `pandas==2.1.1`
+- `numpy==1.26.3`
+- `pytz==2025.2`
+- `openpyxl==3.1.5`
+
+## Installation
+
+### Install from PyPI
+
+```bash
+pip install dojo-beam-transforms==3.1.0
+```
+
+### Install from GitHub tag
+
+```bash
+pip install "git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@release-v3.1.0"
+```
+
+## Updated Usage Examples
+
+### Example 1: CSV input + cleaning + enrichment
+
+```python
+import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions
+
+from pipeline_components.input_file import read_csvs_union
+from pipeline_components import data_cleaning as dc
+from pipeline_components import data_enrichment as de
 
 
-## Table of Contents
+pipeline_options = PipelineOptions()
 
-1. [DOJO-Beam-Transforms](#dojo-beam-transforms)
-2. [About DOJO-Smart-Ways](#about-dojo-smart-ways)
-3. [What You'll Find Here](#what-youll-find-here)
-4. [Dependency Versions for Release 1.0.0](#dependency-versions-for-release-100)
-5. [Quick Start Guide](#quick-start-guide)
-6. [Pipeline Deployment with Docker image](#pipeline-deployment-with-docker-image)
+with beam.Pipeline(options=pipeline_options) as pipeline:
+    records = read_csvs_union(
+        pipeline=pipeline,
+        input_pattern="gs://my-bucket/input/*.csv",
+        delimiter=";",
+        identifier="orders"
+    )
 
-## About DOJO-Smart-Ways
+    cleaned = (
+        records
+        | "Keep Relevant Columns" >> beam.ParDo(
+            dc.KeepColumns(["order_id", "status", "amount"])
+        )
+        | "Normalize Status" >> beam.ParDo(
+            dc.ReplaceValues(["status"], {"": "UNKNOWN", None: "UNKNOWN"})
+        )
+        | "Clean Amount Regex" >> beam.ParDo(
+            dc.ReplaceRegex(["amount"], [(r",", ".")])
+        )
+    )
 
-DOJO-Smart-Ways is committed to advancing data engineering, providing solutions that enhance data processing capabilities, and sharing knowledge within the data engineering community. Our focus is on creating efficient, scalable solutions for real-world data challenges.
+    enriched = (
+        cleaned
+        | "Cast Amount To Float" >> beam.ParDo(de.ColumnsToFloat(["amount"]))
+        | "Force Order Id As String" >> beam.ParDo(de.ColumnsToString(["order_id"]))
+    )
 
-## What You'll Find Here
+    _ = enriched | "Write Output" >> beam.io.WriteToText("gs://my-bucket/output/orders")
+```
 
-This repository contains:
+### Example 2: Read from BigQuery and write to BigQuery
 
-- **Custom Apache Beam Transformations**: Reusable code snippets for specific data preparation tasks.
-- **Data Processing Recipes**: Step-by-step guides for common and advanced data processing scenarios.
-- **Integration Examples**: How to integrate Apache Beam pipelines with BigQuery and other cloud services for end-to-end data processing solutions.
-- **Performance Optimization Tips**: Best practices for optimizing your Apache Beam pipelines for performance and cost.
+```python
+import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelineOptions
 
-
-## Dependency Versions for Release 1.0.0
-
-The following is a list of the dependencies and their respective versions that are required and compatible with the `dojo-beam-transforms` package version 1.0.0:
-
-### Apache Beam SDK Version
-
-- `apache-beam[dataframe,gcp,interactive] == 2.58.1`
-
-### Other Dependencies
-
-- `pandas == 2.0.3`
-- `pandas-datareader == 0.10.0`
-- `PyMuPDF == 1.23.22`
-- `pypinyin == 0.51.0`
-- `unidecode == 1.3.8`
-- `openpyxl == 3.0.10`
-- `fsspec == 2024.6.1`
-- `gcsfs == 2024.6.1`
-
-### Compatible Python Versions
-
-The following Python versions have been tested and are confirmed to be compatible with this release:
-
-- Python 3.10
-- Python 3.11
-
-Please ensure that your environment meets these requirements for optimal performance and compatibility.
+from pipeline_components.input_file import read_bq
+from pipeline_components.data_cleaning.TrimValues import TrimValues
+from pipeline_components.data_cleaning.DropDuplicates import DropDuplicates
 
 
-## Quick Start Guide
+temp_location = "gs://my-project-temp/dataflow"
+query = """
+SELECT order_id, customer_name, city
+FROM `my_project.my_dataset.orders`
+"""
 
-**Streamline Your Setup with `DOJO-Beam-Transforms`!** Begin your development journey smoothly by following this streamlined step:
+pipeline_options = PipelineOptions()
 
-1. **Initialize Your Development Environment:**
-   
-   Start by creating a new branch for your project within the `DOJO-Beam-Transforms` repository. This approach ensures you can develop and iterate on your generic classes tailored to the project's needs. Use the following commands to clone the repository and switch to a new branch named after your project:
+with beam.Pipeline(options=pipeline_options) as pipeline:
+    rows = read_bq(
+        pipeline=pipeline,
+        query=query,
+        temp_location=temp_location,
+        use_standard_sql=True,
+        identifier="orders_bq"
+    )
 
-   ```bash
-   # Clone the DOJO-Beam-Transforms repository
-   git clone https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git
-   cd DOJO-Beam-Transforms
-   
-   # Create and switch to a new branch named 'project_name'
-   git checkout -b project_name
-   ```
+    transformed = (
+        rows
+        | "Trim Customer Name" >> beam.ParDo(TrimValues(["customer_name"]))
+        | "Drop Duplicates" >> beam.ParDo(DropDuplicates(["order_id"]))
+    )
 
-   Once your project-specific development is underway, you can seamlessly integrate these changes into your Jupyter notebook environment. Execute the command below to install the project branch directly:
+    transformed | "Write To BQ" >> beam.io.WriteToBigQuery(
+        table="my_project:my_dataset.orders_clean",
+        write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
+        create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+    )
+```
 
-   ```bash
-   !pip install dojo-beam-transforms
-   ```
+## Docker Image for Dataflow Custom Container
 
-   This method allows for continuous development and testing within your project's scope, enabling a more efficient workflow.
+The repository includes a Dockerfile aligned with Beam SDK `2.72.0` and Python `3.12`.
 
-2. **Consolidate Progress and Manage Dependencies:**
+```bash
+docker build -t dojo_beam:3.1.0 .
+docker tag dojo_beam:3.1.0 REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.0
+docker push REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.0
+```
 
-   After validating the effectiveness of your enhancements or new features, merge your working progress from the `project_name` branch into the main branch. This step is crucial for consolidating your efforts and ensuring the broader project benefits from your contributions. Additionally, if your development introduced new dependencies, remember to update the `setup.py` file accordingly to include these dependencies. This ensures anyone pulling from the main branch or installing the package gets a version with all necessary dependencies resolved.
+For Dataflow custom container runs, set:
 
-By following this integrated approach, you maintain a clean and organized development process, facilitating collaboration and ensuring that your enhancements are systematically incorporated into the `DOJO-Beam-Transforms` project.
+- `sdk_container_image=REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.0`
+- `sdk_location=container`
 
-3. **Utilize the Components:**
+## Release Preparation Checklist (GitHub + PyPI)
 
-   Bring the power of `DOJO-Beam-Transforms` into your pipeline with ease:
-   ```python
-   from pipeline_components.input_file import read_pdf, read_and_apply_headers, read_bq
-   from pipeline_components import data_enrichment as de
-   from pipeline_components import data_cleaning as dc
-   
-   def process_delivery_requests(temp_location, output_table):
-   
-   # Reading the initial data
-   delivery_requests, invalid_delivery_requests = read_json(pipeline, 'bucket/location/file.json, identifier='')
-   
-   # Cleaning the data
-   cleaned_data = (
-      delivery_requests
-      | 'Keep Only BR Currency' >> beam.ParDo(dc.KeepColumnValues('Currency', ['R$', '$']))
-      | 'Replace , to .  on Coordinates' >> beam.ParDo(dc.ReplacePatterns(['Longitude', 'Latitude'], ',', '.'))
-   )
-   
-   # Enriching the data
-   enriched_data = (
-      cleaned_data
-      | 'Convert to String' >> beam.ParDo(de.ColumnsToStringConverter(), ['destination', 'origin'])
-   )
-   
-   # Writing the final output to BigQuery
-   enriched_data | 'Write to BigQuery' >> beam.io.WriteToBigQuery(
-      table=output_table,
-      schema='SCHEMA_AUTODETECT',
-      create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
-      write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
-      custom_gcs_temp_location=temp_location
-   )
-   
-   # Run the pipeline
-   pipeline.run().wait_until_finish()
-   
-   if __name__ == '__main__':
-      temp_location = 'path/to/temp/location'
-      output_table = 'project-id:dataset.table'
-      process_delivery_requests(temp_location, output_table)
-   ```
+1. Confirm versions are aligned in:
+   - `setup.py`
+   - `pyproject.toml`
+   - `enums/DojoBeamTransformVersion.py`
+   - Docker image/tag references
+2. Build distributions:
 
-## Pipeline Deployment with Docker Image
+```bash
+python -m pip install --upgrade build twine
+python -m build
+python -m twine check dist/*
+```
 
-### Benefits of Saving a Docker Image
+3. Tag and publish GitHub release:
 
-Saving your Docker image provides several advantages, including consistency across environments, ease of deployment, and faster start-up times. By saving the image, you ensure that the exact environment used in development is replicated in production, reducing the chances of discrepancies or bugs. Additionally, storing Docker images allows for easy rollbacks to previous versions if needed, and simplifies the process of scaling deployments across multiple instances.
+```bash
+git tag -a release-v3.1.0 -m "Release v3.1.0"
+git push origin release-v3.1.0
+```
 
-### Storage Options
+4. Publish to PyPI:
 
-In the example below, the Docker image is stored in **[Google Cloud's Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)**, a managed service that allows you to securely store and manage your container images. While the Artifact Registry is a convenient option, especially for projects already using Google Cloud, Docker images can also be stored in other commonly used registries, including:
+```bash
+python -m twine upload dist/*
+```
 
-- **Docker Hub**: A popular and widely used registry for storing public and private images.
-- **Amazon Elastic Container Registry (ECR)**: A service provided by AWS for managing Docker containers within the AWS ecosystem.
-- **Azure Container Registry (ACR)**: A managed Docker container registry service provided by Microsoft Azure.
+## Release Text (Ready to Use)
 
-### Prerequisites
+See [RELEASE_TEXT_v3.1.0.md](./RELEASE_TEXT_v3.1.0.md) for prewritten notes for:
 
-- **Docker installed on your machine.**
-- **Google Cloud SDK installed.**
-
-1. **Clone the Dockerfile**
-
-2. **Build the Docker Image**
-   Inside the folder where Dockerfile is located run: `docker build -t [IMAGE_NAME] .`
-
-3. **Authenticate with Google Cloud**
-   Configure Docker to authenticate requests for Artifact Registry using the following command: `gcloud auth configure-docker [REGION]-docker.pkg.dev`
-
-5. **Tag your Docker image**
-   Use the following command: `docker tag [IMAGE_NAME]:[VERSION] [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/[IMAGE_NAME]`
-
-6. **Push the Docker image to Artifact Registry**
-   Use the following command: `docker push [REGION]-docker.pkg.dev/[PROJECT_ID]/[REPOSITORY]/[IMAGE_NAME]`
-
-7. **Run the Dataflow Pipeline with Custom Container**
-  Add these two parameters to yout pipeline options
-      pipeline_options = {
-       'sdk_container_image': '[REGION]-docker.pkg.dev/[PROJECT_ID]/dojo-beam/[IMAGE_NAME]',
-       'sdk_location': 'container'}
-
-**Embark on your data processing journey with `DOJO-Beam-Transforms` today!**
+- GitHub Release description
+- PyPI long-description changelog section

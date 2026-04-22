@@ -19,15 +19,11 @@ class RemoveAccents(beam.DoFn):
     def process(self, element):
         # Remove accents from the specified columns
         for column in self.columns:
-            try:
-                if column not in element:
-                    raise ValueError(f"Column '{column}' not found in element: {element}")
-                if element[column] and not isinstance(element[column], str):
-                    raise TypeError(f"Column '{column}' value is not a string: {element}")
-                element[column] = ''.join(
-                    c for c in unicodedata.normalize('NFD', element[column]) if unicodedata.category(c) != 'Mn'
-                ) if element[column] else None
-            except (ValueError, TypeError) as e:
-                yield {"error": str(e)}
-                return
+            if column not in element:
+                raise ValueError(f"Column '{column}' not found in element: {element}")
+            if element[column] and not isinstance(element[column], str):
+                raise TypeError(f"Column '{column}' value is not a string: {element}")
+            element[column] = ''.join(
+                c for c in unicodedata.normalize('NFD', element[column]) if unicodedata.category(c) != 'Mn'
+            ) if element[column] else None
         yield element

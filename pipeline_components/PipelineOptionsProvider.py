@@ -26,7 +26,7 @@ class PipelineOptionsProvider:
     _region = None
     _runner = BeamRunner.DIRECT.value
     _template_name = None
-    _container_version = DojoBeamTransformVersion.V3_0_0.value
+    _container_version = DojoBeamTransformVersion.V3_1_0.value
     _extra_package = None
     _machine_type = DataflowMachineType.N1_STANDARD_1.value
     _num_workers = 1
@@ -166,6 +166,7 @@ class PipelineOptionsProvider:
         os.environ['CURRENT_DATE'] = current_date
 
         if self.execution_date:
-            pipeline_options.view_as(PipelineOptions).execution_date = self.execution_date
-            
-        return beam.Pipeline(options=pipeline_options)
+            pipeline_options.view_as(CustomPipelineOptions).execution_date = self.execution_date
+        user_options =  pipeline_options.view_as(CustomPipelineOptions)
+
+        return beam.Pipeline(options=pipeline_options), user_options
