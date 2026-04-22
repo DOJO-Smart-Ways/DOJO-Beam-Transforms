@@ -5,6 +5,10 @@ on:
     branches: ["main"]
     types: [closed]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   ReuseableMatrixJobForDeployment:
     if: github.event.pull_request.merged == true
@@ -12,6 +16,9 @@ jobs:
       matrix:
         environment: [ga]
     uses: ./.github/workflows/docker_uploader.yml
+    permissions:
+      contents: read
+      id-token: write
     with:
       environment: ${{ matrix.environment }}
     secrets: inherit
