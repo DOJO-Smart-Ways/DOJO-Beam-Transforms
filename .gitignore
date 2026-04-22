@@ -9,7 +9,6 @@ __pycache__/
 venv/
 dojo_beam_transforms.egg-info/
 dojo_beam_transforms.egg-info
-build/
-.build/
 .build/*
-build/*
+build/
+
