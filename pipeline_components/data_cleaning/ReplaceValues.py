@@ -26,14 +26,10 @@ class ReplaceValues(beam.DoFn):
     def process(self, element):
         # Replace values in the specified columns
         for column in self.columns:
-            try:
-                if column in element:
-                    for target_value, replacement_value in self.replacements.items():
-                        if element[column] == target_value:
-                            element[column] = replacement_value
-                else:
-                    raise ValueError(f"Column '{column}' not found in element: {element}")
-            except ValueError as e:
-                yield {"error": str(e)}
-                return
+            if column in element:
+                for target_value, replacement_value in self.replacements.items():
+                    if element[column] == target_value:
+                        element[column] = replacement_value
+            else:
+                raise ValueError(f"Column '{column}' not found in element: {element}")
         yield element

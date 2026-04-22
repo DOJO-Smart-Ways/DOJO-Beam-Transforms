@@ -34,19 +34,11 @@ def test_trim_values_column_not_found():
         {'name': ' Bob ', 'city': ' Los Angeles '}
     ]
     
-    # Define expected output for error handling
-    expected_output = [
-        {"error": "Column 'non_existent_column' not found in element: {'name': ' Alice ', 'city': ' New York '}"},
-        {"error": "Column 'non_existent_column' not found in element: {'name': ' Bob ', 'city': ' Los Angeles '}"}
-    ]
-
-    # Run the pipeline and validate the error output
-    with BeamTestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply TrimValues' >> beam.ParDo(TrimValues(columns=['non_existent_column']))
-
-        # Assert the output contains the error messages
-        assert_that(output_pcoll, equal_to(expected_output))
+    # Run the pipeline and validate it fails with the expected message
+    with pytest.raises(RuntimeError, match=r"Column 'non_existent_column' not found in element: .*"):
+        with BeamTestPipeline() as p:
+            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            _ = input_pcoll | 'Apply TrimValues' >> beam.ParDo(TrimValues(columns=['non_existent_column']))
 
 @pytest.mark.TrimValues
 def test_trim_values_non_string_value():
@@ -56,19 +48,11 @@ def test_trim_values_non_string_value():
         {'name': ' Bob ', 'city': None}
     ]
     
-    # Define expected output
-    expected_output = [
-        {"error": "Column 'city' value is not a string neither None: {'name': ' Alice ', 'city': 123}"},
-        {'name': ' Bob ', 'city': None}  # None is now considered valid
-    ]
-
-    # Run the pipeline and validate the output
-    with BeamTestPipeline() as p:
-        input_pcoll = p | 'Create Input' >> beam.Create(input_data)
-        output_pcoll = input_pcoll | 'Apply TrimValues' >> beam.ParDo(TrimValues(columns=['city']))
-
-        # Assert the output matches the expected output
-        assert_that(output_pcoll, equal_to(expected_output))
+    # Run the pipeline and validate it fails with the expected message
+    with pytest.raises(RuntimeError, match=r"Column 'city' value is not a string neither None: .*"):
+        with BeamTestPipeline() as p:
+            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            _ = input_pcoll | 'Apply TrimValues' >> beam.ParDo(TrimValues(columns=['city']))
 
 @pytest.mark.TrimValues
 def test_trim_values_invalid_columns_type():

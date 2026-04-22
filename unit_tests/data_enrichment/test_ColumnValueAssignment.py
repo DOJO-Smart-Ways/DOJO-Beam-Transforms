@@ -57,5 +57,5 @@ def test_column_value_assignment_non_dict_element():
     # Run the pipeline and expect a ValueError
     with pytest.raises(RuntimeError, match=r"Error: element is not a dictionary: .*"):
         with BeamTestPipeline() as p:
-            input_pcoll = p | 'Create Input' >> beam.Create(input_data)
+            input_pcoll = p | 'Create Input' >> beam.Create([element_invalido])
             _ = input_pcoll | 'Assign Value' >> beam.ParDo(ColumnValueAssignment(value='active', new_column='status'))

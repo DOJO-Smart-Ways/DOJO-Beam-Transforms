@@ -67,7 +67,9 @@ class ApplyHeadersFn(beam.DoFn):
             result = {headers[i]:data_product[i] for i in range(len(headers))}
             yield result
         else:
-            yield "Error: Mismatched lengths of headers and data"
+            raise ValueError(
+                f"Mismatched lengths of headers ({len(headers)}) and data ({len(data_product)}): {data_product}"
+            )
             
 def read_and_apply_headers(pipeline, input_header, input_file_csv, delimiter=';', identifier=''):
     """
