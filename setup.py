@@ -18,6 +18,8 @@ setup(
     install_requires=[
         'apache-beam[dataframe,gcp,interactive]==2.72.0',
         'pandas==2.1.1',
+        'apache-beam[dataframe,gcp,interactive]==2.72.0',
+        'pandas==2.1.1',
         'numpy==1.26.3',
         'pytz==2025.2',
         'openpyxl==3.1.5'
