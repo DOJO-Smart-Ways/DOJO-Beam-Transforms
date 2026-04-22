@@ -5,7 +5,7 @@ FROM python:3.12-slim AS base
 RUN apt-get update && apt-get install -y git
 RUN pip install --no-cache-dir \
     #dojo-beam-transforms
-    git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@release-v3.1.0
+    git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@release-v3.1.1
 
 # Copy files from official SDK image, including script/dependencies.
 COPY --from=apache/beam_python3.12_sdk:2.72.0 /opt/apache/beam /opt/apache/beam
