@@ -61,13 +61,13 @@ with beam.Pipeline(options=pipeline_options) as pipeline:
     cleaned = (
         records
         | "Keep Relevant Columns" >> beam.ParDo(
-            dc.KeepColumns(["order_id", "status", "amount"])
+            KeepColumns(["order_id", "status", "amount"])
         )
         | "Normalize Status" >> beam.ParDo(
-            dc.ReplaceValues(["status"], {"": "UNKNOWN", None: "UNKNOWN"})
+            ReplaceValues(["status"], {"": "UNKNOWN", None: "UNKNOWN"})
         )
         | "Clean Amount Regex" >> beam.ParDo(
-            dc.ReplaceRegex(["amount"], [(r",", ".")])
+            ReplaceRegex(["amount"], [(r",", ".")])
         )
     )
 
