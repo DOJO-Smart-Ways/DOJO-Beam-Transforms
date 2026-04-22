@@ -5,7 +5,7 @@ README = Path(__file__).with_name("README.md").read_text(encoding="utf-8")
 
 setup(
     name='dojo-beam-transforms',
-    version='3.1.1',
+    version='3.1.1.post1',
     description='Apache Beam 2.72.0 transforms and utilities for Python 3.12',
     long_description=README,
     long_description_content_type='text/markdown',
