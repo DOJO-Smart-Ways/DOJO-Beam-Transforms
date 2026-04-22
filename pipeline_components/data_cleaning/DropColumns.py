@@ -34,12 +34,8 @@ class DropColumns(beam.DoFn):
         Yields:
             The modified element with specified columns removed or an error if a column is missing.
         """
-        try:
-            for col in self.column:
-                if col not in element:
-                    raise ValueError(f"Column '{col}' not found in element: {element}")
-                element.pop(col)
-            yield element
-        except ValueError as e:
-            yield {"error": str(e)}
-
+        for col in self.column:
+            if col not in element:
+                raise ValueError(f"Column '{col}' not found in element: {element}")
+            element.pop(col)
+        yield element
