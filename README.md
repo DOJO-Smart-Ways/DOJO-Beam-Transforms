@@ -5,10 +5,10 @@
 ## Current Release
 
 - Package: `dojo-beam-transforms`
-- Current release: `3.1.0`
+- Current release: `3.1.1`
 - Python target: `3.12`
 
-## Compatibility Matrix (v3.1.0)
+## Compatibility Matrix (v3.1.1)
 
 ### Apache Beam SDK
 
@@ -26,13 +26,13 @@
 ### Install from PyPI
 
 ```bash
-pip install dojo-beam-transforms==3.1.0
+pip install dojo-beam-transforms==3.1.1
 ```
 
 ### Install from GitHub tag
 
 ```bash
-pip install "git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@release-v3.1.0"
+pip install "git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@release-v3.1.1"
 ```
 
 ## Updated Usage Examples
@@ -126,14 +126,14 @@ with beam.Pipeline(options=pipeline_options) as pipeline:
 The repository includes a Dockerfile aligned with Beam SDK `2.72.0` and Python `3.12`.
 
 ```bash
-docker build -t dojo_beam:3.1.0 .
-docker tag dojo_beam:3.1.0 REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.0
-docker push REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.0
+docker build -t dojo_beam:3.1.1 .
+docker tag dojo_beam:3.1.1 REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.1
+docker push REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.1
 ```
 
 For Dataflow custom container runs, set:
 
-- `sdk_container_image=REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.0`
+- `sdk_container_image=REGION-docker.pkg.dev/PROJECT_ID/dojo-beam/dojo_beam:3.1.1`
 - `sdk_location=container`
 
 ## Release Preparation Checklist (GitHub + PyPI)
@@ -154,8 +154,8 @@ python -m twine check dist/*
 3. Tag and publish GitHub release:
 
 ```bash
-git tag -a release-v3.1.0 -m "Release v3.1.0"
-git push origin release-v3.1.0
+git tag -a release-v3.1.1 -m "Release v3.1.1"
+git push origin release-v3.1.1
 ```
 
 4. Publish to PyPI:
@@ -166,7 +166,7 @@ python -m twine upload dist/*
 
 ## Release Text (Ready to Use)
 
-See [RELEASE_TEXT_v3.1.0.md](./RELEASE_TEXT_v3.1.0.md) for prewritten notes for:
+See [RELEASE_TEXT_v3.1.1.md](./RELEASE_TEXT_v3.1.1.md) for prewritten notes for:
 
 - GitHub Release description
 - PyPI long-description changelog section
