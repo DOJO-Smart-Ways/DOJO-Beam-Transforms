@@ -26,7 +26,7 @@ class PipelineOptionsProvider:
     _region = None
     _runner = BeamRunner.DIRECT.value
     _template_name = None
-    _container_version = DojoBeamTransformVersion.V3_1_0.value
+    _container_version = DojoBeamTransformVersion.V3_1_1.value
     _extra_package = None
     _machine_type = DataflowMachineType.N1_STANDARD_1.value
     _num_workers = 1
