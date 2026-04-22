@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir \
     git+https://github.com/DOJO-Smart-Ways/DOJO-Beam-Transforms.git@release-v3.1.0
 
 # Copy files from official SDK image, including script/dependencies.
-COPY --from=apache/beam_python3.12_sdk:2.71.0 /opt/apache/beam /opt/apache/beam
+COPY --from=apache/beam_python3.12_sdk:2.72.0 /opt/apache/beam /opt/apache/beam
 
 # Set the entrypoint to Apache Beam SDK launcher.
 ENTRYPOINT ["/opt/apache/beam/boot"]
