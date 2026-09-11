@@ -107,15 +107,10 @@ class BigqueryToRaw:
                 f"Expected apache_beam.Pipeline, got {type(pipeline)}"
             )
 
-        execution_date = (
-            execution_date
-            if execution_date
-            else self.current_date
-        )
+        execution_date = execution_date if execution_date else self.current_date
 
         select_query = (
-            f"SELECT * "
-            f"FROM `{self.gcp_project}.{dataset}.{table}`"
+            f"SELECT * FROM `{self.gcp_project}.{dataset}.{table}`"
         )
 
         if date_column is not None:
@@ -140,16 +135,14 @@ class BigqueryToRaw:
             "output",
         )
 
-        rows = pipeline.apply(
-            f"Read from BigQuery {identifier}",
-            ReadFromBigQuery(
+        result = (
+            pipeline
+            | f"Read from BigQuery {identifier}"
+            >> ReadFromBigQuery(
                 query=select_query,
                 use_standard_sql=True,
-            ),
-        )
-
-        result = rows | (
-            f"Write to Parquet {identifier}"
+            )
+            | f"Write to Parquet {identifier}"
             >> WriteToParquet(
                 file_path_prefix=output_path,
                 schema=pyarrow_schema,
