@@ -135,18 +135,41 @@ class PipelineOptionsProvider:
         pipeline_options = CustomPipelineOptions(auto_unique_labels=True)
 
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
-        google_cloud_options.project = self.gcp_project
-        google_cloud_options.region = self.region
-        google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'temp', self.product)
-        google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_project}-staging', self.product)
+
+        if google_cloud_options.project is None:
+            google_cloud_options.project = self.gcp_project
+
+        if google_cloud_options.region is None:
+            google_cloud_options.region = self.region
+
+        if google_cloud_options.temp_location is None:
+            google_cloud_options.temp_location = gcp.build_gcs_path(
+                f'{self.gcp_project}-temp',
+                'data-flow-pipelines',
+                'temp',
+                self.product
+            )
+
+        if google_cloud_options.staging_location is None:
+            google_cloud_options.staging_location = gcp.build_gcs_path(
+                f'{self.gcp_project}-staging',
+                self.product
+            )
+
+        if (
+            self.template_name is not None
+            and google_cloud_options.template_location is None
+        ):
+            google_cloud_options.template_location = gcp.build_gcs_path(
+                f'{self.gcp_project}-templates',
+                self.product,
+                self.template_name
+            )
         
         
         if self.runner == BeamRunner.DATAFLOW.value and self.template_name is None:
             raise ValueError('For DataflowRunner template name is not should be empty or None')
         
-        if self.template_name is not None:
-            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-templates', self.product, self.template_name)
-
         pipeline_options.view_as(StandardOptions).runner = self.runner
 
         
