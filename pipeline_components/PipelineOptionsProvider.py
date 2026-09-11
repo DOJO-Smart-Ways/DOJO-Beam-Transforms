@@ -26,7 +26,7 @@ class PipelineOptionsProvider:
     _region = None
     _runner = BeamRunner.DIRECT.value
     _template_name = None
-    _container_version = DojoBeamTransformVersion.V3_1_1.value
+    _container_version = DojoBeamTransformVersion.V3_1_2.value
     _extra_package = None
     _machine_type = DataflowMachineType.N1_STANDARD_1.value
     _num_workers = 1
@@ -128,11 +128,11 @@ class PipelineOptionsProvider:
     def execution_date(self, value):
         self._execution_date = value
     
-    def getPipelineOptions(self):
+    def getPipelineOptions(self, argv=None):
         if self.gcp_project is None or self.template_name is None or self.region is None:
             raise ValueError(f'{self.gcp_project} is None or {self.template_name} is None or {self.region} GCP project, template name and region should not be empty or None')
         
-        pipeline_options = CustomPipelineOptions(auto_unique_labels=True)
+        pipeline_options = CustomPipelineOptions(argv, auto_unique_labels=True)
 
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
 
