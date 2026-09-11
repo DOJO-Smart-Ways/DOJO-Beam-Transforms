@@ -26,7 +26,7 @@ class PipelineOptionsProvider:
     _region = None
     _runner = BeamRunner.DIRECT.value
     _template_name = None
-    _container_version = DojoBeamTransformVersion.V3_1_1.value
+    _container_version = DojoBeamTransformVersion.V3_1_2.value
     _extra_package = None
     _machine_type = DataflowMachineType.N1_STANDARD_1.value
     _num_workers = 1
@@ -128,25 +128,48 @@ class PipelineOptionsProvider:
     def execution_date(self, value):
         self._execution_date = value
     
-    def getPipelineOptions(self):
+    def getPipelineOptions(self, argv=None):
         if self.gcp_project is None or self.template_name is None or self.region is None:
             raise ValueError(f'{self.gcp_project} is None or {self.template_name} is None or {self.region} GCP project, template name and region should not be empty or None')
         
-        pipeline_options = CustomPipelineOptions(auto_unique_labels=True)
+        pipeline_options = CustomPipelineOptions(argv, auto_unique_labels=True)
 
         google_cloud_options = pipeline_options.view_as(GoogleCloudOptions)
-        google_cloud_options.project = self.gcp_project
-        google_cloud_options.region = self.region
-        google_cloud_options.temp_location = gcp.build_gcs_path(f'{self.gcp_project}-temp', 'data-flow-pipelines', 'temp', self.product)
-        google_cloud_options.staging_location = gcp.build_gcs_path(f'{self.gcp_project}-staging', self.product)
+
+        if google_cloud_options.project is None:
+            google_cloud_options.project = self.gcp_project
+
+        if google_cloud_options.region is None:
+            google_cloud_options.region = self.region
+
+        if google_cloud_options.temp_location is None:
+            google_cloud_options.temp_location = gcp.build_gcs_path(
+                f'{self.gcp_project}-temp',
+                'data-flow-pipelines',
+                'temp',
+                self.product
+            )
+
+        if google_cloud_options.staging_location is None:
+            google_cloud_options.staging_location = gcp.build_gcs_path(
+                f'{self.gcp_project}-staging',
+                self.product
+            )
+
+        if (
+            self.template_name is not None
+            and google_cloud_options.template_location is None
+        ):
+            google_cloud_options.template_location = gcp.build_gcs_path(
+                f'{self.gcp_project}-templates',
+                self.product,
+                self.template_name
+            )
         
         
         if self.runner == BeamRunner.DATAFLOW.value and self.template_name is None:
             raise ValueError('For DataflowRunner template name is not should be empty or None')
         
-        if self.template_name is not None:
-            google_cloud_options.template_location = gcp.build_gcs_path(f'{self.gcp_project}-templates', self.product, self.template_name)
-
         pipeline_options.view_as(StandardOptions).runner = self.runner
 
         
