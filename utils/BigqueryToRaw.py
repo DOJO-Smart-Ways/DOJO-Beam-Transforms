@@ -1,5 +1,7 @@
 import apache_beam as beam
 import os
+from datetime import datetime
+import re
 from apache_beam.io.parquetio import WriteToParquet
 from apache_beam.io import ReadFromBigQuery
 import pyarrow as pa
@@ -84,6 +86,33 @@ def bq_field_to_pyarrow_type(bq_type):
         raise ValueError(f"Not Allowed type: {bq_type}")
 
 
+def _normalize_datetime_fields(row, datetime_fields):
+    """Convert BigQuery DATETIME values to naive Python datetimes."""
+    normalized = row.copy()
+    for name in datetime_fields:
+        value = row.get(name)
+        if value is None:
+            continue
+        error = (
+            f"Field '{name}': expected BigQuery DATETIME "
+            "(datetime.datetime without timezone or valid DATETIME string)"
+        )
+        if isinstance(value, str):
+            if not re.fullmatch(
+                r"\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?",
+                value,
+            ):
+                raise ValueError(error)
+            try:
+                value = datetime.fromisoformat(value)
+            except ValueError:
+                raise ValueError(error) from None
+        if not isinstance(value, datetime) or value.tzinfo is not None:
+            raise ValueError(error)
+        normalized[name] = value
+    return normalized
+
+
 class BigqueryToRaw:
     def __init__(self):
         self.gcp_project = os.getenv("GCP_PROJECT")
@@ -119,12 +148,14 @@ class BigqueryToRaw:
                 f"= DATE('{execution_date}')"
             )
 
-        pyarrow_schema = bq_to_pyarrow_schema(
-            get_table_schema(
-                self.gcp_project,
-                dataset,
-                table,
-            )
+        bq_schema = get_table_schema(
+            self.gcp_project,
+            dataset,
+            table,
+        )
+        pyarrow_schema = bq_to_pyarrow_schema(bq_schema)
+        datetime_fields = tuple(
+            field.name for field in bq_schema if field.field_type == "DATETIME"
         )
 
         output_path = gcp.build_gcs_path(
@@ -142,6 +173,8 @@ class BigqueryToRaw:
                 query=select_query,
                 use_standard_sql=True,
             )
+            | f"Normalize DATETIME {identifier}"
+            >> beam.Map(_normalize_datetime_fields, datetime_fields)
             | f"Write to Parquet {identifier}"
             >> WriteToParquet(
                 file_path_prefix=output_path,
