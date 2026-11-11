@@ -7,6 +7,7 @@ class DojoBeamTransformVersion(Enum):
     V3_0_0 = "3.0.0"
     V3_1_1 = "3.1.1"
     V3_1_2 = "3.1.2"
+    V3_1_3 = "3.1.3"
 
     @staticmethod
     def validate(version):
